@@ -9,23 +9,23 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root{
-    --bg:#F7FAFA; --bg-panel:#FFFFFF; --bg-panel-raised:#FFFFFF;
-    --line:#E1E8E8; --ink:#142424; --muted:#5F7373;
-    --accent:#0D9488; --accent2:#0B7A70; --accent-ink:#FFFFFF;
-    --danger:#E4572E; --alive:#22A559; --radius:14px;
+    --bg:#0A0E1A; --bg-panel:#131A2C; --bg-panel-raised:#1B2438;
+    --line:#263252; --ink:#EDF1FA; --muted:#8B96B8;
+    --accent:#22D3C4; --accent2:#14B8AA; --accent-ink:#04211D;
+    --danger:#FF5A5F; --alive:#34D399; --radius:14px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-  body{background:radial-gradient(circle at 20% 0%, #FFFFFF 0%, #EAF4F3 60%);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;}
+  body{background:radial-gradient(circle at 20% 0%, #16213A 0%, var(--bg) 60%);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;}
   h1,h2,h3,.headline{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.3px;margin:0;}
   .wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px;}
   .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:16px;border-bottom:2px solid var(--line);margin-bottom:18px;}
   .pool-title{font-size:24px;}
   .pool-sub{color:var(--muted);font-size:13px;margin-top:4px;}
-  .week-pill{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;padding:6px 12px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 10px rgba(13,148,136,.25);}
+  .week-pill{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;padding:6px 12px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 10px rgba(34,211,196,.35);}
   .btn{font-family:'Inter';font-weight:600;font-size:14px;border:none;border-radius:10px;padding:9px 16px;cursor:pointer;transition:transform .08s ease, box-shadow .15s ease;}
   .btn:active{transform:scale(.97);}
-  .btn-accent{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);box-shadow:0 3px 12px rgba(13,148,136,.30);}
+  .btn-accent{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);box-shadow:0 3px 12px rgba(34,211,196,.4);}
   .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
   .btn-danger{background:var(--danger);color:#fff;}
   .btn-sm{padding:6px 10px;font-size:12.5px;}
@@ -33,7 +33,7 @@
   input,select,textarea{background:var(--bg-panel-raised);border:1px solid var(--line);color:var(--ink);padding:9px 10px;border-radius:8px;font-family:'Inter';font-size:14px;width:100%;}
   label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:4px;}
   .field{margin-bottom:12px;}
-  .panel{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(20,36,36,.06);}
+  .panel{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.3);}
   .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
   .tab{font-family:'Oswald',sans-serif;font-weight:500;font-size:14px;color:var(--muted);background:none;border:none;padding:10px 4px;margin-right:18px;cursor:pointer;border-bottom:2px solid transparent;}
   .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
@@ -56,11 +56,11 @@
   .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   @media(max-width:420px){.team-grid{grid-template-columns:1fr;}}
   .team-card{background:var(--bg-panel-raised);border:2px solid var(--line);border-radius:var(--radius);padding:12px;cursor:pointer;text-align:left;font-family:'Inter';transition:border-color .12s ease, box-shadow .12s ease;}
-  .team-card.selected{border-color:var(--accent);background:rgba(13,148,136,.10);box-shadow:0 0 0 3px rgba(13,148,136,.20);}
+  .team-card.selected{border-color:var(--accent);background:rgba(34,211,196,.12);box-shadow:0 0 0 3px rgba(34,211,196,.25);}
   .team-card.used{opacity:.35;cursor:not-allowed;}
   .team-card .tname{font-weight:700;font-size:15px;}
   .team-card .tmeta{font-size:11.5px;color:var(--muted);margin-top:3px;}
-  .pick-locked{background:rgba(34,165,89,.12);border:1px solid var(--alive);border-radius:var(--radius);padding:14px;text-align:center;}
+  .pick-locked{background:rgba(52,211,153,.14);border:1px solid var(--alive);border-radius:var(--radius);padding:14px;text-align:center;}
   .pick-locked .tname{font-family:'Oswald';font-size:20px;color:var(--alive);}
 
   .matchup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -71,7 +71,27 @@
   .matchup-side .mpct{font-size:15px;font-weight:700;color:var(--accent);}
   .matchup-vs{font-size:11px;color:var(--muted);font-family:'Oswald';}
   .avatar-choice{font-size:22px;background:var(--bg-panel-raised);border:2px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer;}
-  .avatar-choice.selected{border-color:var(--accent);background:rgba(13,148,136,.12);}
+  .avatar-choice.selected{border-color:var(--accent);background:rgba(34,211,196,.15);}
+
+  .week-strip{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 14px;margin-bottom:4px;}
+  .week-strip-item{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:5px;width:56px;}
+  .ws-circle{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-size:14px;font-weight:600;border:2px dashed var(--line);color:var(--muted);}
+  .ws-label{font-size:10px;color:var(--muted);text-align:center;white-space:nowrap;}
+  .week-strip-item.ws-current .ws-circle{border-style:solid;border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px rgba(34,211,196,.15);}
+  .week-strip-item.ws-current .ws-label{color:var(--accent);font-weight:600;}
+  .week-strip-item.ws-past .ws-circle{border-style:solid;border-color:var(--alive);color:var(--alive);background:rgba(52,211,153,.08);}
+
+  .mp-card{display:flex;align-items:center;gap:10px;background:var(--bg-panel-raised);border:1px solid var(--line);border-radius:var(--radius);padding:14px 10px;margin-bottom:12px;}
+  .mp-side{flex:1;background:none;border:2px solid transparent;border-radius:12px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:'Inter';}
+  .mp-side.selected{border-color:var(--accent);background:rgba(34,211,196,.10);}
+  .mp-side.used{opacity:.35;cursor:not-allowed;}
+  .mp-circle{width:52px;height:52px;border-radius:50%;background:var(--bg-panel);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-weight:700;font-size:15px;color:var(--ink);overflow:hidden;}
+  .mp-name{font-size:12.5px;font-weight:600;text-align:center;line-height:1.25;color:var(--ink);}
+  .mp-sub{font-size:10px;color:var(--muted);}
+  .mp-pct{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;width:64px;}
+  .mp-pct-num{font-family:'Oswald';font-size:16px;font-weight:600;color:var(--ink);}
+  .mp-pct-divider{width:1px;height:14px;background:var(--line);margin:1px 0;}
+  .mp-pct-caption{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.03em;}
   .picker-avatars{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
   .picker-avatar{font-size:16px;background:var(--bg-panel-raised);border:1px solid var(--line);border-radius:8px;padding:2px 6px;}
 
@@ -623,6 +643,22 @@ function weekUsedFor(userId, team){
   return hit ? hit.week : null;
 }
 
+function renderWeekStrip(cw){
+  const total = activePool.pool.total_weeks;
+  const items = [];
+  for(let w=1; w<=total; w++){
+    const hasMatchups = weekMatchups(w).length>0;
+    const isCurrent = w===cw;
+    const isPast = w<cw;
+    let stateClass = isCurrent ? 'ws-current' : (isPast ? 'ws-past' : 'ws-future');
+    items.push(`<div class="week-strip-item ${stateClass}">
+      <div class="ws-circle">${isPast?'✓':w}</div>
+      <div class="ws-label">${isCurrent?'Current':'Wk '+w}</div>
+    </div>`);
+  }
+  return `<div class="week-strip">${items.join('')}</div>`;
+}
+
 function renderPick(){
   const cw = computeActiveWeek();
   const myPick = (activePool.picks||[]).find(p=>p.user_id===session.user.id && p.week===cw);
@@ -631,10 +667,11 @@ function renderPick(){
     <div style="font-size:13px;color:var(--muted);">Lives left</div>
     <div class="lives">${Array.from({length:activePool.pool.lives_allowed}).map((_,i)=>`<span class="life-dot ${i<st.misses?'used':''}"></span>`).join('')}</div>
   </div>`;
-  if(st.eliminated) return statusBar + `<div class="panel"><div class="empty">You were eliminated in week ${st.eliminatedWeek}. You can still talk smack.</div></div>`;
-  if(seasonOver()) return statusBar + `<div class="panel"><div class="empty">Season's over — check the standings.</div></div>`;
-  const teams = weekTeams(cw);
-  if(teams.length===0) return statusBar + `<div class="panel"><div class="empty">The commish hasn't added this week's matchups yet.</div></div>`;
+  const weekStrip = renderWeekStrip(cw);
+  if(st.eliminated) return statusBar + weekStrip + `<div class="panel"><div class="empty">You were eliminated in week ${st.eliminatedWeek}. You can still talk smack.</div></div>`;
+  if(seasonOver()) return statusBar + weekStrip + `<div class="panel"><div class="empty">Season's over — check the standings.</div></div>`;
+  const matchups = weekMatchups(cw);
+  if(matchups.length===0) return statusBar + weekStrip + `<div class="panel"><div class="empty">The commish hasn't added this week's matchups yet.</div></div>`;
   const closed = pickWindowClosed(cw);
   const kickoffLabel = formatKickoff(cw);
   const countdown = (()=>{ const t = weekKickoff(cw); return t ? relativeCountdown(t) : null; })();
@@ -643,46 +680,55 @@ function renderPick(){
     if(myPick){
       const opp = opponentOf(myPick.team, cw);
       const winPct = winPctFor(myPick.team, cw);
-      return statusBar + `<div class="panel"><div class="section-label">Week ${cw} pick</div>
+      return statusBar + weekStrip + `<div class="panel"><div class="section-label">Week ${cw} pick</div>
         <div class="pick-locked"><div class="tname">${escapeHtml(myPick.team)}</div>
         ${opp?`<div style="font-size:13px;color:var(--muted);">vs ${escapeHtml(opp)}${winPct!=null?` · ${winPct}% favorite`:''}</div>`:''}
         <div style="font-size:12.5px;color:var(--muted);margin-top:4px;">Locked — kickoff has passed.</div></div></div>`;
     }
-    return statusBar + `<div class="panel"><div class="empty">Kickoff passed for Week ${cw} and you didn't lock in a pick.</div></div>`;
+    return statusBar + weekStrip + `<div class="panel"><div class="empty">Kickoff passed for Week ${cw} and you didn't lock in a pick.</div></div>`;
   }
 
   const counts = teamUseCounts(session.user.id);
   const cap = maxTeamUses();
-  const withPct = teams.map(team=>({ team, pct: winPctFor(team, cw) }));
-  withPct.sort((a,b)=>{
-    if(a.pct==null && b.pct==null) return 0;
-    if(a.pct==null) return 1;
-    if(b.pct==null) return -1;
-    return b.pct - a.pct;
-  });
-  const topPct = withPct.length && withPct[0].pct!=null ? withPct[0].pct : null;
-  const cards = withPct.map(({team, pct})=>{
+  const circleFor = team=>{
+    const logo = teamInfo(team).logo_url;
+    if(logo) return `<img src="${logo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>`;
+    return escapeHtml(team.slice(0,2).toUpperCase());
+  };
+  const sideButton = (team, pct)=>{
     const usedCount = counts[team]||0;
     const isMaxed = usedCount >= cap;
     const isUsed = isMaxed && (!myPick || myPick.team!==team);
     const isSel = selectedTeamDraft ? selectedTeamDraft===team : (myPick && myPick.team===team);
-    const opp = opponentOf(team, cw);
-    const isFavorite = pct!=null && pct===topPct && pct>50;
-    const oddsBadge = pct!=null ? ` · <span style="color:var(--alive);font-weight:600;">${pct}%</span>${isFavorite?' <span style="color:var(--accent);font-weight:600;">★ favorite</span>':''}` : '';
-    const capLabel = cap===Infinity ? '' : ` (${usedCount}/${cap} used)`;
-    return `<button class="team-card ${isSel?'selected':''} ${isUsed?'used':''}" data-team="${escapeHtml(team)}" ${isUsed?'disabled':''}>
-      <div class="tname">${teamInfo(team).logo_url?`<img src="${teamInfo(team).logo_url}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-3px;margin-right:4px;"/>`:''}${escapeHtml(team)}</div>
-      <div class="tmeta">${isUsed?`Limit reached${capLabel}`:(opp?`vs ${escapeHtml(opp)}${oddsBadge}${capLabel}`:'')}</div>
+    const capLabel = cap===Infinity ? '' : `${usedCount}/${cap}`;
+    return `<button class="mp-side ${isSel?'selected':''} ${isUsed?'used':''}" data-team="${escapeHtml(team)}" ${isUsed?'disabled':''}>
+      <div class="mp-circle">${circleFor(team)}</div>
+      <div class="mp-name">${escapeHtml(team)}</div>
+      ${isUsed?`<div class="mp-sub">Limit reached</div>`:(capLabel?`<div class="mp-sub">${capLabel} used</div>`:'')}
     </button>`;
+  };
+  const matchupCards = matchups.map(m=>{
+    const aPct = m.home_win_pct!=null ? Math.round(m.home_win_pct) : null;
+    const bPct = aPct!=null ? 100-aPct : null;
+    return `<div class="mp-card">
+      ${sideButton(m.team_a, aPct)}
+      <div class="mp-pct">
+        ${aPct!=null ? `<span class="mp-pct-num">${aPct}%</span>` : '<span class="mp-pct-num">—</span>'}
+        <div class="mp-pct-divider"></div>
+        ${bPct!=null ? `<span class="mp-pct-num">${bPct}%</span>` : '<span class="mp-pct-num">—</span>'}
+        <div class="mp-pct-caption">win prob.</div>
+      </div>
+      ${sideButton(m.team_b, bPct)}
+    </div>`;
   }).join('');
   const canSave = !!(selectedTeamDraft || myPick);
-  return statusBar + `<div class="panel">
+  return statusBar + weekStrip + `<div class="panel">
     <div class="section-label">Week ${cw} — pick a team to survive on</div>
     ${kickoffLabel?`<div style="font-size:13px;color:var(--accent);margin-bottom:10px;">Picks lock ${escapeHtml(kickoffLabel)}${countdown?` (${countdown})`:''} — change your mind until then.</div>`:''}
     ${myPick?`<div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Current pick: <b style="color:var(--ink);">${escapeHtml(myPick.team)}</b></div>`:''}
-    <div class="team-grid">${cards}</div>
+    ${matchupCards}
     <div style="margin-top:14px;"><button class="btn btn-accent" id="save-pick-btn" ${canSave?'':'disabled'} ${loading?'disabled':''}>${loading?'Saving…':(myPick?'Update pick':'Save pick')}</button></div>
-    <div class="helper">${cap===Infinity ? 'No limit on how many times a team can be picked.' : `Each team can be picked up to ${cap} time${cap===1?'':'s'} all season.`} Sorted by best odds first when available.</div>
+    <div class="helper">${cap===Infinity ? 'No limit on how many times a team can be picked.' : `Each team can be picked up to ${cap} time${cap===1?'':'s'} all season.`}</div>
   </div>`;
 }
 
@@ -1055,7 +1101,7 @@ function bindPoolEvents(){
   el('logout-btn').onclick = async ()=>{ if(chatChannel) sb.removeChannel(chatChannel); await sb.auth.signOut(); session=null; profile=null; activePool=null; render(); };
   document.querySelectorAll('.tab').forEach(t=>{ t.onclick = ()=>{ activeTab=t.dataset.tab; selectedTeamDraft=null; pendingResults={}; scoreWeekSelection=null; render(); }; });
 
-  document.querySelectorAll('.team-card:not(.used)').forEach(c=>{
+  document.querySelectorAll('.mp-side:not(.used)').forEach(c=>{
     c.onclick = ()=>{ selectedTeamDraft = c.dataset.team; render(); };
   });
   const saveBtn = el('save-pick-btn');
