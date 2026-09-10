@@ -92,8 +92,8 @@
   .mp-pct-num{font-family:'Oswald';font-size:16px;font-weight:600;color:var(--ink);}
   .mp-pct-divider{width:1px;height:14px;background:var(--line);margin:1px 0;}
   .mp-pct-caption{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.03em;}
-  .picker-avatars{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
-  .picker-avatar{font-size:16px;background:var(--bg-panel-raised);border:1px solid var(--line);border-radius:8px;padding:2px 6px;}
+  .picker-list{display:flex;flex-direction:column;gap:3px;margin-top:6px;align-items:center;}
+  .picker-row{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
 
   @keyframes floatBlob{0%{transform:translate(0,0) scale(1);}50%{transform:translate(14px,-18px) scale(1.08);}100%{transform:translate(0,0) scale(1);}}
   .auth-bg-blob{position:fixed;top:-90px;right:-70px;width:260px;height:260px;background:radial-gradient(circle,var(--accent) 0%,transparent 70%);opacity:.28;filter:blur(6px);border-radius:50%;animation:floatBlob 9s ease-in-out infinite;pointer-events:none;z-index:0;}
@@ -579,7 +579,7 @@ function renderStandings(){
     const pickerHtml = (team)=>{
       const pickers = pickersFor(team);
       if(!pickers.length) return '';
-      if(weekClosed) return `<div class="picker-avatars">${pickers.map(mem=>`<span class="picker-avatar" title="${escapeHtml(nameFor(mem.user_id))}">${avatarFor(mem.user_id)}</span>`).join('')}</div>`;
+      if(weekClosed) return `<div class="picker-list">${pickers.map(mem=>`<div class="picker-row"><span>${avatarFor(mem.user_id)}</span><span>${escapeHtml(nameFor(mem.user_id))}</span></div>`).join('')}</div>`;
       return `<div class="helper" style="margin-top:4px;">${pickers.length} picked</div>`;
     };
     return `<div class="matchup-card">
@@ -782,6 +782,22 @@ function renderCommish(){
       ${teamsThisWeek.length ? resultsRows : '<div class="helper">No matchups exist for that week yet — add them below.</div>'}
       ${teamsThisWeek.length ? `<div style="margin-top:12px;"><button class="btn btn-accent" id="save-results-btn" ${loading?'disabled':''}>${loading?'Saving…':'Save results'}</button></div>` : ''}
     </div>
+
+    ${weekMatchups(scoreWeek).length ? `<div class="panel">
+      <div class="section-label">Fix a matchup — Week ${scoreWeek}</div>
+      <div class="helper" style="margin-bottom:10px;">Found a wrong pairing or wrong kickoff time? Edit it directly and save.</div>
+      ${weekMatchups(scoreWeek).map(m=>{
+        const kickoffLocal = m.kickoff_time ? new Date(m.kickoff_time).toISOString().slice(0,16) : '';
+        return `<div style="border:1px solid var(--line);border-radius:var(--radius);padding:10px;margin-bottom:10px;">
+          <div style="display:flex;gap:8px;margin-bottom:6px;">
+            <input data-fix-team-a="${m.id}" value="${escapeHtml(m.team_a)}" style="flex:1;"/>
+            <input data-fix-team-b="${m.id}" value="${escapeHtml(m.team_b)}" style="flex:1;"/>
+          </div>
+          <input data-fix-kickoff="${m.id}" type="datetime-local" value="${kickoffLocal}" style="margin-bottom:6px;"/>
+          <button class="btn btn-ghost btn-sm" data-fix-save="${m.id}" ${loading?'disabled':''}>Save fix</button>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
 
     ${weekMatchups(scoreWeek).length ? `<div class="panel">
       <div class="section-label">Update win odds for Week ${scoreWeek}</div>
@@ -1323,6 +1339,26 @@ function bindPoolEvents(){
     }catch(e){ errorMsg = e.message; }
     loading = false; render();
   };
+
+  document.querySelectorAll('[data-fix-save]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = btn.dataset.fixSave;
+      const teamAInput = document.querySelector(`[data-fix-team-a="${id}"]`);
+      const teamBInput = document.querySelector(`[data-fix-team-b="${id}"]`);
+      const kickoffInput = document.querySelector(`[data-fix-kickoff="${id}"]`);
+      const newA = teamAInput.value.trim();
+      const newB = teamBInput.value.trim();
+      const newKickoff = kickoffInput.value ? new Date(kickoffInput.value).toISOString() : null;
+      if(!newA || !newB) return;
+      loading = true; errorMsg=''; render();
+      try{
+        const { error } = await sb.from('matchups').update({ team_a: newA, team_b: newB, kickoff_time: newKickoff }).eq('id', id);
+        if(error) throw error;
+        await loadPoolFull(activePool.pool.id);
+      }catch(e){ errorMsg = e.message; }
+      loading = false; render();
+    };
+  });
 
   const saveOddsBtn = el('save-odds-btn');
   if(saveOddsBtn) saveOddsBtn.onclick = async ()=>{
