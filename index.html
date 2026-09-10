@@ -9,23 +9,23 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root{
-    --bg:#F7F5FB; --bg-panel:#FFFFFF; --bg-panel-raised:#FFFFFF;
-    --line:#E4E0EF; --ink:#201A2E; --muted:#6E6680;
-    --accent:#7C6FE0; --accent2:#6355C7; --accent-ink:#FFFFFF;
-    --danger:#E4576B; --alive:#2FBF9F; --radius:14px;
+    --bg:#F7FAFA; --bg-panel:#FFFFFF; --bg-panel-raised:#FFFFFF;
+    --line:#E1E8E8; --ink:#142424; --muted:#5F7373;
+    --accent:#0D9488; --accent2:#0B7A70; --accent-ink:#FFFFFF;
+    --danger:#E4572E; --alive:#22A559; --radius:14px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-  body{background:radial-gradient(circle at 20% 0%, #FFFFFF 0%, #F1EDF9 60%);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;}
+  body{background:radial-gradient(circle at 20% 0%, #FFFFFF 0%, #EAF4F3 60%);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;}
   h1,h2,h3,.headline{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.3px;margin:0;}
   .wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px;}
   .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:16px;border-bottom:2px solid var(--line);margin-bottom:18px;}
   .pool-title{font-size:24px;}
   .pool-sub{color:var(--muted);font-size:13px;margin-top:4px;}
-  .week-pill{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;padding:6px 12px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 10px rgba(124,111,224,.28);}
+  .week-pill{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;padding:6px 12px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 10px rgba(13,148,136,.25);}
   .btn{font-family:'Inter';font-weight:600;font-size:14px;border:none;border-radius:10px;padding:9px 16px;cursor:pointer;transition:transform .08s ease, box-shadow .15s ease;}
   .btn:active{transform:scale(.97);}
-  .btn-accent{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);box-shadow:0 3px 12px rgba(124,111,224,.32);}
+  .btn-accent{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);box-shadow:0 3px 12px rgba(13,148,136,.30);}
   .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
   .btn-danger{background:var(--danger);color:#fff;}
   .btn-sm{padding:6px 10px;font-size:12.5px;}
@@ -33,7 +33,7 @@
   input,select,textarea{background:var(--bg-panel-raised);border:1px solid var(--line);color:var(--ink);padding:9px 10px;border-radius:8px;font-family:'Inter';font-size:14px;width:100%;}
   label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:4px;}
   .field{margin-bottom:12px;}
-  .panel{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(32,26,46,.06);}
+  .panel{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(20,36,36,.06);}
   .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
   .tab{font-family:'Oswald',sans-serif;font-weight:500;font-size:14px;color:var(--muted);background:none;border:none;padding:10px 4px;margin-right:18px;cursor:pointer;border-bottom:2px solid transparent;}
   .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
@@ -56,11 +56,11 @@
   .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   @media(max-width:420px){.team-grid{grid-template-columns:1fr;}}
   .team-card{background:var(--bg-panel-raised);border:2px solid var(--line);border-radius:var(--radius);padding:12px;cursor:pointer;text-align:left;font-family:'Inter';transition:border-color .12s ease, box-shadow .12s ease;}
-  .team-card.selected{border-color:var(--accent);background:rgba(124,111,224,.10);box-shadow:0 0 0 3px rgba(124,111,224,.20);}
+  .team-card.selected{border-color:var(--accent);background:rgba(13,148,136,.10);box-shadow:0 0 0 3px rgba(13,148,136,.20);}
   .team-card.used{opacity:.35;cursor:not-allowed;}
   .team-card .tname{font-weight:700;font-size:15px;}
   .team-card .tmeta{font-size:11.5px;color:var(--muted);margin-top:3px;}
-  .pick-locked{background:rgba(47,191,159,.12);border:1px solid var(--alive);border-radius:var(--radius);padding:14px;text-align:center;}
+  .pick-locked{background:rgba(34,165,89,.12);border:1px solid var(--alive);border-radius:var(--radius);padding:14px;text-align:center;}
   .pick-locked .tname{font-family:'Oswald';font-size:20px;color:var(--alive);}
 
   .matchup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -71,9 +71,23 @@
   .matchup-side .mpct{font-size:15px;font-weight:700;color:var(--accent);}
   .matchup-vs{font-size:11px;color:var(--muted);font-family:'Oswald';}
   .avatar-choice{font-size:22px;background:var(--bg-panel-raised);border:2px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer;}
-  .avatar-choice.selected{border-color:var(--accent);background:rgba(124,111,224,.12);}
+  .avatar-choice.selected{border-color:var(--accent);background:rgba(13,148,136,.12);}
   .picker-avatars{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
   .picker-avatar{font-size:16px;background:var(--bg-panel-raised);border:1px solid var(--line);border-radius:8px;padding:2px 6px;}
+
+  @keyframes floatBlob{0%{transform:translate(0,0) scale(1);}50%{transform:translate(14px,-18px) scale(1.08);}100%{transform:translate(0,0) scale(1);}}
+  .auth-bg-blob{position:fixed;top:-90px;right:-70px;width:260px;height:260px;background:radial-gradient(circle,var(--accent) 0%,transparent 70%);opacity:.28;filter:blur(6px);border-radius:50%;animation:floatBlob 9s ease-in-out infinite;pointer-events:none;z-index:0;}
+  .auth-bg-blob2{position:fixed;bottom:-110px;left:-70px;width:230px;height:230px;background:radial-gradient(circle,var(--accent2) 0%,transparent 70%);opacity:.22;filter:blur(6px);border-radius:50%;animation:floatBlob 11s ease-in-out infinite reverse;pointer-events:none;z-index:0;}
+  @keyframes cardIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .auth-card{animation:cardIn .45s cubic-bezier(.2,.8,.2,1);position:relative;z-index:1;}
+  .auth-hero-title{font-size:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .input-icon-wrap{position:relative;}
+  .input-icon-wrap input{padding-left:38px;}
+  .input-icon-wrap .input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;opacity:.65;pointer-events:none;}
+  .feature-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;font-size:13.5px;color:var(--muted);}
+  .feature-row .feature-icon{font-size:15px;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .btn-spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px;}
   .chat-list{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;margin-bottom:12px;}
   .chat-msg{background:var(--bg-panel-raised);border-radius:8px;padding:9px 12px;}
   .chat-msg .who-line{font-size:12px;color:var(--accent);font-weight:600;margin-bottom:3px;}
@@ -295,18 +309,20 @@ async function render(){
 
 function renderLanding(){
   return `
-    <div class="panel" style="margin-top:40px;">
-      <h1 class="pool-title" style="margin-bottom:6px;">Survivor Gauntlet</h1>
+    <div class="auth-bg-blob"></div>
+    <div class="auth-bg-blob2"></div>
+    <div class="panel auth-card" style="margin-top:40px;">
+      <h1 class="auth-hero-title" style="margin-bottom:6px;">Survivor Gauntlet</h1>
       <div class="pool-sub" style="margin-bottom:18px;">Fantasy Survivor Gauntlet &amp; NFL Survivor pools</div>
-      <div style="font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:16px;">
+      <div style="font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:18px;">
         Pick a team each week — your fantasy league's matchups or real NFL games — and try to survive the season without picking a loser twice.
       </div>
-      <ul style="margin:0 0 20px 18px;padding:0;color:var(--muted);font-size:13.5px;line-height:1.8;">
-        <li>Picks stay editable until Thursday kickoff</li>
-        <li>Standings, lives, and pick history for the whole group</li>
-        <li>Live trash talk chat</li>
-        <li>Each team can only be used once all season</li>
-      </ul>
+      <div style="margin-bottom:20px;">
+        <div class="feature-row"><span class="feature-icon">⏱️</span><span>Picks stay editable until Thursday kickoff</span></div>
+        <div class="feature-row"><span class="feature-icon">📊</span><span>Standings, lives, and pick history for the whole group</span></div>
+        <div class="feature-row"><span class="feature-icon">💬</span><span>Live trash talk chat</span></div>
+        <div class="feature-row"><span class="feature-icon">🔁</span><span>Each team can only be used once all season</span></div>
+      </div>
       <button class="btn btn-accent" id="landing-signup" style="width:100%;margin-bottom:10px;">Create an account</button>
       <button class="btn btn-ghost" id="landing-login" style="width:100%;">I already have an account</button>
     </div>`;
@@ -319,13 +335,21 @@ function bindLandingEvents(){
 
 function renderAuth(){
   return `
-    <div class="panel" style="margin-top:60px;">
-      <h1 class="pool-title" style="margin-bottom:6px;">Survivor Gauntlet</h1>
+    <div class="auth-bg-blob"></div>
+    <div class="auth-bg-blob2"></div>
+    <div class="panel auth-card" style="margin-top:60px;">
+      <h1 class="auth-hero-title" style="margin-bottom:6px;">Survivor Gauntlet</h1>
       <div class="pool-sub" style="margin-bottom:18px;">Fantasy Survivor Gauntlet &amp; NFL Survivor pools</div>
       ${errorMsg ? `<div class="error-box">${escapeHtml(errorMsg)}</div>` : ''}
-      <div class="field"><label>Email</label><input id="auth-email" type="email" autocomplete="email"/></div>
-      <div class="field"><label>Password</label><input id="auth-pass" type="password" autocomplete="current-password"/></div>
-      <button class="btn btn-accent" id="auth-submit" style="width:100%;" ${loading?'disabled':''}>${loading?'Please wait…':(authMode==='login'?'Log in':'Sign up')}</button>
+      <div class="field">
+        <label>Email</label>
+        <div class="input-icon-wrap"><span class="input-icon">📧</span><input id="auth-email" type="email" autocomplete="email"/></div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="input-icon-wrap"><span class="input-icon">🔒</span><input id="auth-pass" type="password" autocomplete="current-password"/></div>
+      </div>
+      <button class="btn btn-accent" id="auth-submit" style="width:100%;" ${loading?'disabled':''}>${loading?'<span class="btn-spinner"></span>Please wait…':(authMode==='login'?'Log in':'Sign up')}</button>
       <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted);">
         ${authMode==='login' ? `New here? <button class="link" id="switch-mode">Create an account</button>` : `Already have an account? <button class="link" id="switch-mode">Log in</button>`}
       </div>
@@ -481,6 +505,7 @@ function renderPoolShell(){
       </div>
       <div class="week-pill">${over ? 'Season complete' : 'Week '+computeActiveWeek()+' / '+p.total_weeks}</div>
     </div>
+    ${errorMsg ? `<div class="error-box" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;"><span>${escapeHtml(errorMsg)}</span><button class="link" id="dismiss-error-btn" style="color:#FFD5D0;flex-shrink:0;">✕</button></div>` : ''}
     ${champBanner}
     <div class="tabs">
       <button class="tab ${activeTab==='standings'?'active':''}" data-tab="standings">Standings</button>
@@ -757,7 +782,15 @@ function renderCommish(){
           <button class="btn btn-ghost btn-sm" data-rename-btn="${escapeHtml(t)}">Save team</button>
         </div>`;
       }).join('')}
-      <div class="helper">Renaming updates it everywhere — past picks, results, and matchups all follow along. Owner and logo are just for display.</div>
+      <div class="helper" style="margin-bottom:14px;">Renaming updates it everywhere — past picks, results, and matchups all follow along. Owner and logo are just for display.</div>
+
+      <div class="divider"></div>
+      <div class="section-label">Bulk rename all teams</div>
+      <div class="field">
+        <label>One per line: OldName -> NewName. Only lines you include get changed.</label>
+        <textarea id="bulk-rename-input" rows="6" placeholder="Fred -> Caucasity Audacity&#10;Rob -> The Washington Whatevers"></textarea>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="bulk-rename-btn" ${loading?'disabled':''}>${loading?'Renaming…':'Rename all'}</button>
     </div>` : ''}
 
     <details class="panel">
@@ -987,7 +1020,27 @@ function subscribeChat(){
     .subscribe();
 }
 
+async function renameTeamCascade(poolId, oldName, newName, ownerLabel, logoUrl){
+  if(newName !== oldName){
+    const results = await Promise.all([
+      sb.from('matchups').update({ team_a: newName }).eq('pool_id', poolId).eq('team_a', oldName),
+      sb.from('matchups').update({ team_b: newName }).eq('pool_id', poolId).eq('team_b', oldName),
+      sb.from('picks').update({ team: newName }).eq('pool_id', poolId).eq('team', oldName),
+      sb.from('results').update({ team: newName }).eq('pool_id', poolId).eq('team', oldName)
+    ]);
+    const failed = results.find(r=>r.error);
+    if(failed) throw failed.error;
+  }
+  const { error: teamErr } = await sb.from('teams').upsert(
+    { pool_id: poolId, name: newName, owner_label: ownerLabel || null, logo_url: logoUrl },
+    { onConflict: 'pool_id,name' }
+  );
+  if(teamErr) throw teamErr;
+}
+
 function bindPoolEvents(){
+  const dismissErrorBtn = el('dismiss-error-btn');
+  if(dismissErrorBtn) dismissErrorBtn.onclick = ()=>{ errorMsg=''; render(); };
   el('back-to-dashboard').onclick = ()=>{ if(chatChannel){ sb.removeChannel(chatChannel); chatChannel=null; } activePool=null; render(); };
   const refreshBtn = el('refresh-pool-btn');
   if(refreshBtn) refreshBtn.onclick = async ()=>{
@@ -1120,28 +1173,37 @@ function bindPoolEvents(){
       if(!newName) return;
       loading = true; errorMsg=''; render();
       try{
-        const poolId = activePool.pool.id;
-        if(newName !== oldName){
-          const results = await Promise.all([
-            sb.from('matchups').update({ team_a: newName }).eq('pool_id', poolId).eq('team_a', oldName),
-            sb.from('matchups').update({ team_b: newName }).eq('pool_id', poolId).eq('team_b', oldName),
-            sb.from('picks').update({ team: newName }).eq('pool_id', poolId).eq('team', oldName),
-            sb.from('results').update({ team: newName }).eq('pool_id', poolId).eq('team', oldName)
-          ]);
-          const failed = results.find(r=>r.error);
-          if(failed) throw failed.error;
-        }
-        const { error: teamErr } = await sb.from('teams').upsert(
-          { pool_id: poolId, name: newName, owner_label: ownerLabel || null, logo_url: logoUrl },
-          { onConflict: 'pool_id,name' }
-        );
-        if(teamErr) throw teamErr;
+        await renameTeamCascade(activePool.pool.id, oldName, newName, ownerLabel, logoUrl);
         delete pendingTeamLogos[oldName];
-        await loadPoolFull(poolId);
+        await loadPoolFull(activePool.pool.id);
       }catch(e){ errorMsg = e.message; }
       loading = false; render();
     };
   });
+
+  const bulkRenameBtn = el('bulk-rename-btn');
+  if(bulkRenameBtn) bulkRenameBtn.onclick = async ()=>{
+    const lines = el('bulk-rename-input').value.split('\n').map(l=>l.trim()).filter(Boolean);
+    const pairs = [];
+    const badLines = [];
+    lines.forEach(line=>{
+      const m = line.split(/\s*->\s*/);
+      if(m.length!==2 || !m[0] || !m[1]){ badLines.push(line); return; }
+      pairs.push({ oldName: m[0].trim(), newName: m[1].trim() });
+    });
+    if(!pairs.length){ errorMsg='Use the format "OldName -> NewName", one per line.'; render(); return; }
+    loading = true; errorMsg=''; render();
+    try{
+      const poolId = activePool.pool.id;
+      for(const {oldName, newName} of pairs){
+        const info = teamInfo(oldName);
+        await renameTeamCascade(poolId, oldName, newName, info.owner_label, info.logo_url);
+      }
+      await loadPoolFull(poolId);
+      errorMsg = `Renamed ${pairs.length} team(s).` + (badLines.length ? ` Skipped unreadable lines: ${badLines.join(', ')}.` : '');
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
 
   const overrideWeekInput = el('override-week');
   if(overrideWeekInput) overrideWeekInput.oninput = ()=>{
