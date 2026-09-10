@@ -88,7 +88,8 @@
   .mp-circle{width:52px;height:52px;border-radius:50%;background:var(--bg-panel);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-weight:700;font-size:15px;color:var(--ink);overflow:hidden;}
   .mp-name{font-size:12.5px;font-weight:600;text-align:center;line-height:1.25;color:var(--ink);}
   .mp-sub{font-size:10px;color:var(--muted);}
-  .mp-pct{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;width:64px;}
+  .mp-pct{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;width:76px;}
+  .mp-pct-row{display:flex;align-items:center;gap:8px;}
   .mp-pct-num{font-family:'Oswald';font-size:16px;font-weight:600;color:var(--ink);}
   .mp-pct-divider{width:1px;height:14px;background:var(--line);margin:1px 0;}
   .mp-pct-caption{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.03em;}
@@ -713,9 +714,11 @@ function renderPick(){
     return `<div class="mp-card">
       ${sideButton(m.team_a, aPct)}
       <div class="mp-pct">
-        ${aPct!=null ? `<span class="mp-pct-num">${aPct}%</span>` : '<span class="mp-pct-num">—</span>'}
-        <div class="mp-pct-divider"></div>
-        ${bPct!=null ? `<span class="mp-pct-num">${bPct}%</span>` : '<span class="mp-pct-num">—</span>'}
+        <div class="mp-pct-row">
+          ${aPct!=null ? `<span class="mp-pct-num">${aPct}%</span>` : '<span class="mp-pct-num">—</span>'}
+          <div class="mp-pct-divider"></div>
+          ${bPct!=null ? `<span class="mp-pct-num">${bPct}%</span>` : '<span class="mp-pct-num">—</span>'}
+        </div>
         <div class="mp-pct-caption">win prob.</div>
       </div>
       ${sideButton(m.team_b, bPct)}
