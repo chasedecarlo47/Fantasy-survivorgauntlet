@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Survivor Gauntlet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --bg:#F7F5FB; --bg-panel:#FFFFFF; --bg-panel-raised:#FFFFFF;
+    --line:#E4E0EF; --ink:#201A2E; --muted:#6E6680;
+    --accent:#7C6FE0; --accent2:#6355C7; --accent-ink:#FFFFFF;
+    --danger:#E4576B; --alive:#2FBF9F; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:radial-gradient(circle at 20% 0%, #FFFFFF 0%, #F1EDF9 60%);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;}
+  h1,h2,h3,.headline{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.3px;margin:0;}
+  .wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px;}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:16px;border-bottom:2px solid var(--line);margin-bottom:18px;}
+  .pool-title{font-size:24px;}
+  .pool-sub{color:var(--muted);font-size:13px;margin-top:4px;}
+  .week-pill{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;padding:6px 12px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 10px rgba(124,111,224,.28);}
+  .btn{font-family:'Inter';font-weight:600;font-size:14px;border:none;border-radius:10px;padding:9px 16px;cursor:pointer;transition:transform .08s ease, box-shadow .15s ease;}
+  .btn:active{transform:scale(.97);}
+  .btn-accent{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);box-shadow:0 3px 12px rgba(124,111,224,.32);}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-sm{padding:6px 10px;font-size:12.5px;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  input,select,textarea{background:var(--bg-panel-raised);border:1px solid var(--line);color:var(--ink);padding:9px 10px;border-radius:8px;font-family:'Inter';font-size:14px;width:100%;}
+  label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:4px;}
+  .field{margin-bottom:12px;}
+  .panel{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(32,26,46,.06);}
+  .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .tab{font-family:'Oswald',sans-serif;font-weight:500;font-size:14px;color:var(--muted);background:none;border:none;padding:10px 4px;margin-right:18px;cursor:pointer;border-bottom:2px solid transparent;}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:20px 0;}
+  .error-box{background:#3A1A1A;border:1px solid var(--danger);color:#FFD5D0;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;}
+  .link{color:var(--accent);cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit;font-size:inherit;padding:0;}
+  .pool-card{background:var(--bg-panel-raised);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .pool-card .pname{font-weight:700;}
+  .pool-card .ptype{font-size:12px;color:var(--muted);margin-top:2px;}
+  .standing-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .standing-row:last-child{border-bottom:none;}
+  .s-name{font-weight:600;font-size:15px;flex:1;}
+  .s-name.dead{color:var(--muted);text-decoration:line-through;}
+  .lives{display:flex;gap:4px;}
+  .life-dot{width:10px;height:10px;border-radius:50%;background:var(--alive);}
+  .life-dot.used{background:var(--danger);opacity:.5;}
+  .s-status{font-size:11.5px;color:var(--muted);width:120px;text-align:right;}
+  .s-status.alive{color:var(--alive);}
+  .s-status.out{color:var(--danger);}
+  .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:420px){.team-grid{grid-template-columns:1fr;}}
+  .team-card{background:var(--bg-panel-raised);border:2px solid var(--line);border-radius:var(--radius);padding:12px;cursor:pointer;text-align:left;font-family:'Inter';transition:border-color .12s ease, box-shadow .12s ease;}
+  .team-card.selected{border-color:var(--accent);background:rgba(124,111,224,.10);box-shadow:0 0 0 3px rgba(124,111,224,.20);}
+  .team-card.used{opacity:.35;cursor:not-allowed;}
+  .team-card .tname{font-weight:700;font-size:15px;}
+  .team-card .tmeta{font-size:11.5px;color:var(--muted);margin-top:3px;}
+  .pick-locked{background:rgba(47,191,159,.12);border:1px solid var(--alive);border-radius:var(--radius);padding:14px;text-align:center;}
+  .pick-locked .tname{font-family:'Oswald';font-size:20px;color:var(--alive);}
+
+  .matchup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:420px){.matchup-grid{grid-template-columns:1fr;}}
+  .matchup-card{background:var(--bg-panel-raised);border:1px solid var(--line);border-radius:var(--radius);padding:12px;display:flex;align-items:center;gap:8px;}
+  .matchup-side{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .matchup-side .mname{font-weight:700;font-size:13.5px;text-align:center;}
+  .matchup-side .mpct{font-size:15px;font-weight:700;color:var(--accent);}
+  .matchup-vs{font-size:11px;color:var(--muted);font-family:'Oswald';}
+  .avatar-choice{font-size:22px;background:var(--bg-panel-raised);border:2px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer;}
+  .avatar-choice.selected{border-color:var(--accent);background:rgba(124,111,224,.12);}
+  .picker-avatars{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
+  .picker-avatar{font-size:16px;background:var(--bg-panel-raised);border:1px solid var(--line);border-radius:8px;padding:2px 6px;}
+  .chat-list{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;margin-bottom:12px;}
+  .chat-msg{background:var(--bg-panel-raised);border-radius:8px;padding:9px 12px;}
+  .chat-msg .who-line{font-size:12px;color:var(--accent);font-weight:600;margin-bottom:3px;}
+  .chat-input-row{display:flex;gap:8px;}
+  .chat-input-row textarea{min-height:40px;resize:none;}
+  .section-label{font-family:'Oswald';font-size:14px;color:var(--muted);margin:16px 0 8px;}
+  .section-label:first-child{margin-top:0;}
+  details.panel{padding:0;overflow:hidden;}
+  details.panel summary{list-style:none;cursor:pointer;padding:16px;font-family:'Oswald';font-size:14px;color:var(--ink);display:flex;justify-content:space-between;align-items:center;}
+  details.panel summary::-webkit-details-marker{display:none;}
+  details.panel summary::after{content:'+';color:var(--muted);font-size:20px;font-weight:400;}
+  details.panel[open] summary::after{content:'–';}
+  details.panel summary .summary-sub{font-family:'Inter';font-weight:400;font-size:12px;color:var(--muted);margin-top:2px;}
+  details.panel .details-body{padding:0 16px 16px;}
+  .team-edit-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+  .divider{height:1px;background:var(--line);margin:16px 0;}
+  .result-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);}
+  .result-row:last-child{border-bottom:none;}
+  .result-row .rname{flex:1;font-weight:600;font-size:14px;}
+  .toggle-group{display:flex;gap:6px;}
+  .toggle-btn{font-family:'Inter';font-weight:600;font-size:12px;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;}
+  .toggle-btn.win.active{background:var(--alive);border-color:var(--alive);color:#fff;}
+  .toggle-btn.loss.active{background:var(--danger);border-color:var(--danger);color:#fff;}
+  .invite-code{font-family:'Oswald';font-size:22px;letter-spacing:2px;background:var(--bg-panel-raised);border:1px dashed var(--accent);border-radius:8px;padding:10px;text-align:center;margin:8px 0;}
+  .helper{color:var(--muted);font-size:12.5px;margin-top:4px;}
+  .toplinks{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">Loading…</div>
+
+<script>
+const SUPABASE_URL = 'https://zsyxkemlxzrtetjmgtjf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_01rP32fYxLauevlz1D9uiQ_fedS-KUP';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let session = null;
+let profile = null;
+let myPools = [];
+let activePool = null;
+let activeTab = 'standings';
+let commishTab = 'matchups';
+let selectedTeamDraft = null;
+let pendingResults = {};
+let scoreWeekSelection = null;
+let pendingTeamLogos = {};
+let authMode = 'login';
+let showLanding = true;
+let errorMsg = '';
+let loading = false;
+
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function el(id){ return document.getElementById(id); }
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out=''; for(let i=0;i<6;i++) out+=chars[Math.floor(Math.random()*chars.length)];
+  return out;
+}
+
+// ---------- data helpers ----------
+async function loadProfile(){
+  const { data, error } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+  profile = data || null;
+}
+
+async function loadMyPools(){
+  const { data, error } = await sb.from('pool_members').select('pool_id, pools(*)').eq('user_id', session.user.id);
+  myPools = (data||[]).map(r=>r.pools).filter(Boolean);
+}
+
+async function loadPoolFull(poolId){
+  const [{data: pool}, {data: memberRows}, {data: matchups}, {data: picks}, {data: results}, {data: chat}, {data: teams}] = await Promise.all([
+    sb.from('pools').select('*').eq('id', poolId).maybeSingle(),
+    sb.from('pool_members').select('user_id').eq('pool_id', poolId),
+    sb.from('matchups').select('*').eq('pool_id', poolId),
+    sb.from('picks').select('*').eq('pool_id', poolId),
+    sb.from('results').select('*').eq('pool_id', poolId),
+    sb.from('chat_messages').select('*').eq('pool_id', poolId).order('created_at', {ascending:true}),
+    sb.from('teams').select('*').eq('pool_id', poolId)
+  ]);
+  const userIds = [...new Set((memberRows||[]).map(r=>r.user_id))];
+  let profilesById = {};
+  if(userIds.length){
+    const { data: profiles } = await sb.from('profiles').select('id, display_name, avatar').in('id', userIds);
+    (profiles||[]).forEach(p=>{ profilesById[p.id] = p; });
+  }
+  const members = (memberRows||[]).map(r=>({ user_id: r.user_id, profiles: profilesById[r.user_id] || { display_name:'Unknown', avatar:null } }));
+  activePool = {
+    pool, members, matchups: matchups||[], picks: picks||[], results: results||[], chat: chat||[], teams: teams||[]
+  };
+}
+
+function teamInfo(name){
+  return (activePool.teams||[]).find(t=>t.name===name) || { name, logo_url:null, owner_label:null };
+}
+
+function weekMatchups(week){
+  return (activePool.matchups||[]).filter(m=>m.week===week);
+}
+function allTeamsUsed(){
+  return [...new Set((activePool.matchups||[]).flatMap(m=>[m.team_a, m.team_b]))].sort();
+}
+
+function weekTeams(week){
+  const set = new Set();
+  weekMatchups(week).forEach(m=>{ set.add(m.team_a); set.add(m.team_b); });
+  return [...set];
+}
+function opponentOf(team, week){
+  const m = weekMatchups(week).find(m=>m.team_a===team || m.team_b===team);
+  if(!m) return null;
+  return m.team_a===team ? m.team_b : m.team_a;
+}
+function winPctFor(team, week){
+  const m = weekMatchups(week).find(m=>m.team_a===team || m.team_b===team);
+  if(!m || m.home_win_pct==null) return null;
+  return m.team_a===team ? Math.round(m.home_win_pct) : Math.round(100-m.home_win_pct);
+}
+function americanOddsToProb(price){
+  return price < 0 ? (-price)/((-price)+100) : 100/(price+100);
+}
+function parseMatchupLine(line){
+  let pct = null;
+  let rest = line;
+  const pipeIdx = line.lastIndexOf('|');
+  if(pipeIdx !== -1){
+    const maybePct = line.slice(pipeIdx+1).trim();
+    if(/^\d{1,3}$/.test(maybePct)){
+      pct = Math.min(99, Math.max(1, Number(maybePct)));
+      rest = line.slice(0, pipeIdx).trim();
+    }
+  }
+  const parts = rest.split(/\s+vs\s+/i);
+  if(parts.length!==2) return null;
+  return { team_a: parts[0].trim(), team_b: parts[1].trim(), home_win_pct: pct };
+}
+function weekKickoff(week){
+  const ms = weekMatchups(week).map(m=>m.kickoff_time).filter(Boolean);
+  if(!ms.length) return null;
+  return ms.sort()[0];
+}
+function pickWindowClosed(week){
+  const t = weekKickoff(week);
+  if(!t) return false;
+  return Date.now() >= new Date(t).getTime();
+}
+function formatKickoff(week){
+  const t = weekKickoff(week);
+  if(!t) return null;
+  return new Date(t).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function resultFor(week, team){
+  const r = (activePool.results||[]).find(r=>r.week===week && r.team===team);
+  return r ? r.outcome : null;
+}
+function picksForUser(userId){
+  return (activePool.picks||[]).filter(p=>p.user_id===userId).sort((a,b)=>a.week-b.week);
+}
+function computeActiveWeek(){
+  const weeksWithMatchups = [...new Set((activePool.matchups||[]).map(m=>m.week))].sort((a,b)=>a-b);
+  if(!weeksWithMatchups.length) return activePool.pool.current_week;
+  for(const w of weeksWithMatchups){
+    if(!pickWindowClosed(w)) return w;
+  }
+  return weeksWithMatchups[weeksWithMatchups.length-1];
+}
+
+function teamUseCounts(userId){
+  const counts = {};
+  const cw = computeActiveWeek();
+  picksForUser(userId).forEach(p=>{
+    const countsNow = p.week < cw || (p.week === cw && pickWindowClosed(cw));
+    if(countsNow) counts[p.team] = (counts[p.team]||0) + 1;
+  });
+  return counts;
+}
+function maxTeamUses(){
+  const m = activePool.pool.max_team_uses;
+  return (m===null || m===undefined || m<=0) ? Infinity : m;
+}
+function isTeamMaxedOut(userId, team){
+  const counts = teamUseCounts(userId);
+  return (counts[team]||0) >= maxTeamUses();
+}
+function statusFor(userId){
+  const cw = computeActiveWeek();
+  const lives = activePool.pool.lives_allowed;
+  const picks = picksForUser(userId).filter(p=>p.week <= cw);
+  let misses = 0, eliminatedWeek = null;
+  for(const p of picks){
+    const outcome = resultFor(p.week, p.team);
+    if(outcome==='loss'){
+      misses++;
+      if(misses===lives && eliminatedWeek===null) eliminatedWeek = p.week;
+    }
+  }
+  return { picks, misses, eliminated: misses>=lives, eliminatedWeek };
+}
+function seasonOver(){
+  const cw = computeActiveWeek();
+  return cw >= activePool.pool.total_weeks && pickWindowClosed(activePool.pool.total_weeks);
+}
+function aliveMembers(){ return activePool.members.filter(m=>!statusFor(m.user_id).eliminated); }
+
+// ---------- render ----------
+async function render(){
+  const app = el('app');
+  if(!session){
+    if(showLanding){ app.innerHTML = renderLanding(); bindLandingEvents(); return; }
+    app.innerHTML = renderAuth(); bindAuthEvents(); return;
+  }
+  if(!profile){ app.innerHTML = renderSetName(); bindSetNameEvents(); return; }
+  if(!activePool){ app.innerHTML = renderDashboard(); bindDashboardEvents(); return; }
+  app.innerHTML = renderPoolShell();
+  bindPoolEvents();
+}
+
+function renderLanding(){
+  return `
+    <div class="panel" style="margin-top:40px;">
+      <h1 class="pool-title" style="margin-bottom:6px;">Survivor Gauntlet</h1>
+      <div class="pool-sub" style="margin-bottom:18px;">Fantasy Survivor Gauntlet &amp; NFL Survivor pools</div>
+      <div style="font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:16px;">
+        Pick a team each week — your fantasy league's matchups or real NFL games — and try to survive the season without picking a loser twice.
+      </div>
+      <ul style="margin:0 0 20px 18px;padding:0;color:var(--muted);font-size:13.5px;line-height:1.8;">
+        <li>Picks stay editable until Thursday kickoff</li>
+        <li>Standings, lives, and pick history for the whole group</li>
+        <li>Live trash talk chat</li>
+        <li>Each team can only be used once all season</li>
+      </ul>
+      <button class="btn btn-accent" id="landing-signup" style="width:100%;margin-bottom:10px;">Create an account</button>
+      <button class="btn btn-ghost" id="landing-login" style="width:100%;">I already have an account</button>
+    </div>`;
+}
+
+function bindLandingEvents(){
+  el('landing-signup').onclick = ()=>{ authMode='signup'; showLanding=false; errorMsg=''; render(); };
+  el('landing-login').onclick = ()=>{ authMode='login'; showLanding=false; errorMsg=''; render(); };
+}
+
+function renderAuth(){
+  return `
+    <div class="panel" style="margin-top:60px;">
+      <h1 class="pool-title" style="margin-bottom:6px;">Survivor Gauntlet</h1>
+      <div class="pool-sub" style="margin-bottom:18px;">Fantasy Survivor Gauntlet &amp; NFL Survivor pools</div>
+      ${errorMsg ? `<div class="error-box">${escapeHtml(errorMsg)}</div>` : ''}
+      <div class="field"><label>Email</label><input id="auth-email" type="email" autocomplete="email"/></div>
+      <div class="field"><label>Password</label><input id="auth-pass" type="password" autocomplete="current-password"/></div>
+      <button class="btn btn-accent" id="auth-submit" style="width:100%;" ${loading?'disabled':''}>${loading?'Please wait…':(authMode==='login'?'Log in':'Sign up')}</button>
+      <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted);">
+        ${authMode==='login' ? `New here? <button class="link" id="switch-mode">Create an account</button>` : `Already have an account? <button class="link" id="switch-mode">Log in</button>`}
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <button class="link" id="back-to-landing" style="color:var(--muted);">← Back</button>
+      </div>
+    </div>`;
+}
+
+const AVATAR_OPTIONS = ['🦅','🐻','🦁','🐺','🦊','🐸','🦈','🐉','🤠','🥷','🎃','👑','🔥','⚡','🎯','🍀'];
+
+function resizeImageFile(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const size = 128;
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width-minSide)/2, sy = (img.height-minSide)/2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+        canvas.toBlob(blob=>resolve(blob), 'image/jpeg', 0.82);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadAvatarImage(file){
+  const blob = await resizeImageFile(file);
+  const path = `${session.user.id}/avatar.jpg`;
+  const { error } = await sb.storage.from('avatars').upload(path, blob, { upsert:true, contentType:'image/jpeg' });
+  if(error) throw error;
+  const { data } = sb.storage.from('avatars').getPublicUrl(path);
+  return data.publicUrl + '?t=' + Date.now();
+}
+let selectedAvatar = AVATAR_OPTIONS[0];
+let editingProfile = false;
+let profileEditAvatar = AVATAR_OPTIONS[0];
+
+function renderSetName(){
+  return `
+    <div class="panel" style="margin-top:60px;">
+      <h2 style="margin-bottom:10px;">What should we call you?</h2>
+      <div class="pool-sub" style="margin-bottom:14px;">This is the name your league mates will see.</div>
+      ${errorMsg ? `<div class="error-box">${escapeHtml(errorMsg)}</div>` : ''}
+      <div class="field"><input id="display-name-input" placeholder="Your name" /></div>
+      <div class="field">
+        <label>Pick a symbol, or upload your own image (optional)</label>
+        <div style="font-size:32px;margin-bottom:8px;">${renderAvatarValue(selectedAvatar)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+          ${AVATAR_OPTIONS.map(a=>`<button class="avatar-choice ${selectedAvatar===a?'selected':''}" data-avatar="${a}" type="button">${a}</button>`).join('')}
+        </div>
+        <input type="file" id="avatar-file-input" accept="image/*" style="width:100%;"/>
+        <div class="helper">Any photo works — it's automatically cropped and shrunk to a small square.</div>
+      </div>
+      <button class="btn btn-accent" id="save-name" style="width:100%;" ${loading?'disabled':''}>${loading?'Saving…':'Continue'}</button>
+    </div>`;
+}
+
+function renderDashboard(){
+  const poolCards = myPools.map(p=>`
+    <div class="pool-card" data-pool-id="${p.id}">
+      <div>
+        <div class="pname">${escapeHtml(p.name)}</div>
+        <div class="ptype">${p.game_type==='fantasy_survivor'?'Fantasy Survivor Gauntlet':'NFL Survivor'} · Week ${p.current_week}/${p.total_weeks}</div>
+      </div>
+      <div style="color:var(--accent);">Open →</div>
+    </div>`).join('');
+
+  return `
+    <div class="toplinks">
+      <h1 class="pool-title">Your Pools</h1>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">Log out</button>
+    </div>
+    ${errorMsg ? `<div class="error-box">${escapeHtml(errorMsg)}</div>` : ''}
+
+    <div class="panel">
+      ${editingProfile ? `
+        <div class="field"><input id="profile-name-input" value="${escapeHtml(profile.display_name)}"/></div>
+        <div style="font-size:28px;margin-bottom:8px;">${renderAvatarValue(profileEditAvatar)}</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+          ${AVATAR_OPTIONS.map(a=>`<button class="avatar-choice ${profileEditAvatar===a?'selected':''}" data-profile-avatar="${a}" type="button">${a}</button>`).join('')}
+        </div>
+        <input type="file" id="profile-avatar-file" accept="image/*" style="width:100%;margin-bottom:4px;"/>
+        <div class="helper" style="margin-bottom:10px;">Any photo works — cropped and shrunk automatically.</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-accent" id="save-profile-btn" style="flex:1;" ${loading?'disabled':''}>${loading?'Saving…':'Save'}</button>
+          <button class="btn btn-ghost" id="cancel-profile-btn" style="flex:1;">Cancel</button>
+        </div>
+      ` : `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:15px;">${renderAvatarValue(profile.avatar)} Playing as <b>${escapeHtml(profile.display_name)}</b></span>
+          <button class="btn btn-ghost btn-sm" id="edit-profile-btn">Edit profile</button>
+        </div>
+      `}
+    </div>
+
+    ${poolCards || `<div class="panel"><div class="empty">You're not in any pools yet.</div></div>`}
+
+    <div class="panel">
+      <div class="section-label">Create a pool</div>
+      <div class="field"><label>Pool name</label><input id="new-pool-name" placeholder="e.g. Office Survivor Gauntlet"/></div>
+      <div class="field">
+        <label>Game type</label>
+        <select id="new-pool-type">
+          <option value="fantasy_survivor">Fantasy Survivor Gauntlet (your fantasy league's matchups)</option>
+          <option value="nfl_survivor">NFL Survivor (real NFL games)</option>
+        </select>
+      </div>
+      <div class="field"><label>Lives allowed before elimination</label><input id="new-pool-lives" type="number" value="2" min="1" max="5"/></div>
+      <div class="field"><label>Total weeks</label><input id="new-pool-weeks" type="number" value="15" min="1" max="25"/></div>
+      <button class="btn btn-accent" id="create-pool-btn" style="width:100%;" ${loading?'disabled':''}>${loading?'Creating…':'Create pool'}</button>
+    </div>
+
+    <div class="panel">
+      <div class="section-label">Join a pool</div>
+      <div class="field"><label>Invite code</label><input id="join-code" placeholder="e.g. 7XQK2M" style="text-transform:uppercase;"/></div>
+      <button class="btn btn-ghost" id="join-pool-btn" style="width:100%;" ${loading?'disabled':''}>${loading?'Joining…':'Join pool'}</button>
+    </div>
+  `;
+}
+
+function renderPoolShell(){
+  const p = activePool.pool;
+  const isOwner = p.owner_id === session.user.id;
+  const over = seasonOver();
+  const alive = aliveMembers();
+  let champBanner = '';
+  if(over){
+    if(alive.length===1) champBanner = `<div class="panel" style="text-align:center;background:var(--accent);color:var(--accent-ink);">🏆 ${escapeHtml(nameFor(alive[0].user_id))} wins the pool</div>`;
+    else if(alive.length>1) champBanner = `<div class="panel" style="text-align:center;background:var(--accent);color:var(--accent-ink);">🏆 Co-champs: ${alive.map(m=>escapeHtml(nameFor(m.user_id))).join(', ')}</div>`;
+    else champBanner = `<div class="panel" style="text-align:center;">Season complete — everyone got eliminated</div>`;
+  }
+  return `
+    <div class="toplinks">
+      <button class="link" id="back-to-dashboard">← My pools</button>
+      <div>
+        <button class="btn btn-ghost btn-sm" id="refresh-pool-btn" style="margin-right:8px;">${loading?'…':'↻ Refresh'}</button>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Log out</button>
+      </div>
+    </div>
+    <div class="topbar">
+      <div>
+        <div class="pool-title">${escapeHtml(p.name)}</div>
+        <div class="pool-sub">${p.game_type==='fantasy_survivor'?'Fantasy Survivor Gauntlet':'NFL Survivor'} · ${p.lives_allowed} lives each · ${activePool.members.length} in the pool</div>
+      </div>
+      <div class="week-pill">${over ? 'Season complete' : 'Week '+computeActiveWeek()+' / '+p.total_weeks}</div>
+    </div>
+    ${champBanner}
+    <div class="tabs">
+      <button class="tab ${activeTab==='standings'?'active':''}" data-tab="standings">Standings</button>
+      <button class="tab ${activeTab==='pick'?'active':''}" data-tab="pick">My Pick</button>
+      <button class="tab ${activeTab==='chat'?'active':''}" data-tab="chat">Trash Talk</button>
+      ${isOwner ? `<button class="tab ${activeTab==='commish'?'active':''}" data-tab="commish">Commish</button>` : ''}
+    </div>
+    <div id="tab-content">${renderTabContent()}</div>
+  `;
+}
+
+function nameFor(userId){
+  const m = activePool.members.find(m=>m.user_id===userId);
+  return m && m.profiles ? m.profiles.display_name : 'Unknown';
+}
+function renderAvatarValue(a){
+  if(!a) return '🙃';
+  if(a.startsWith('http')) return `<img src="${a}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-4px;"/>`;
+  return a;
+}
+function avatarFor(userId){
+  const m = activePool.members.find(m=>m.user_id===userId);
+  const a = m && m.profiles ? m.profiles.avatar : null;
+  return renderAvatarValue(a);
+}
+function tagFor(userId){
+  return `<span title="${escapeHtml(nameFor(userId))}">${avatarFor(userId)} ${escapeHtml(nameFor(userId))}</span>`;
+}
+
+function renderTabContent(){
+  if(activeTab==='standings') return renderStandings();
+  if(activeTab==='pick') return renderPick();
+  if(activeTab==='chat') return renderChat();
+  if(activeTab==='commish') return renderCommish();
+  return '';
+}
+
+function renderStandings(){
+  const cw = computeActiveWeek();
+  const closed = pickWindowClosed(cw);
+  const kickoffLabel = formatKickoff(cw);
+  const weekClosed = pickWindowClosed(cw);
+  const matchupCards = weekMatchups(cw).map(m=>{
+    const aPct = m.home_win_pct!=null ? Math.round(m.home_win_pct) : null;
+    const bPct = aPct!=null ? 100-aPct : null;
+    const pickersFor = (team)=> activePool.members.filter(mem => (activePool.picks||[]).some(p=>p.user_id===mem.user_id && p.week===cw && p.team===team));
+    const pickerHtml = (team)=>{
+      const pickers = pickersFor(team);
+      if(!pickers.length) return '';
+      if(weekClosed) return `<div class="picker-avatars">${pickers.map(mem=>`<span class="picker-avatar" title="${escapeHtml(nameFor(mem.user_id))}">${avatarFor(mem.user_id)}</span>`).join('')}</div>`;
+      return `<div class="helper" style="margin-top:4px;">${pickers.length} picked</div>`;
+    };
+    return `<div class="matchup-card">
+      <div class="matchup-side">${teamInfo(m.team_a).logo_url?`<img src="${teamInfo(m.team_a).logo_url}" style="width:16px;height:16px;border-radius:50%;object-fit:cover;"/>`:''}<span class="mname">${escapeHtml(m.team_a)}</span>${aPct!=null?`<span class="mpct">${aPct}%</span>`:''}${pickerHtml(m.team_a)}</div>
+      <div class="matchup-vs">vs</div>
+      <div class="matchup-side">${teamInfo(m.team_b).logo_url?`<img src="${teamInfo(m.team_b).logo_url}" style="width:16px;height:16px;border-radius:50%;object-fit:cover;"/>`:''}<span class="mname">${escapeHtml(m.team_b)}</span>${bPct!=null?`<span class="mpct">${bPct}%</span>`:''}${pickerHtml(m.team_b)}</div>
+    </div>`;
+  }).join('');
+  const oddsPanel = weekMatchups(cw).length ? `<div class="panel">
+    <div class="section-label">Week ${cw} matchups${kickoffLabel?` · locks ${escapeHtml(kickoffLabel)}`:''}</div>
+    <div class="matchup-grid">${matchupCards}</div>
+  </div>` : '';
+
+  if(activePool.members.length===0) return oddsPanel + `<div class="panel"><div class="empty">No one's joined yet. Share the invite code from the Commish tab.</div></div>`;
+  const rows = activePool.members.map(m=>{
+    const st = statusFor(m.user_id);
+    const dots = Array.from({length:activePool.pool.lives_allowed}).map((_,i)=>`<span class="life-dot ${i<st.misses?'used':''}"></span>`).join('');
+    const myWeekPick = (activePool.picks||[]).find(p=>p.user_id===m.user_id && p.week===cw);
+    let statusLabel, statusClass;
+    if(st.eliminated){ statusLabel = `Out — wk ${st.eliminatedWeek}`; statusClass='out'; }
+    else if(seasonOver()){ statusLabel='Survived'; statusClass='alive'; }
+    else if(closed){ statusLabel = myWeekPick ? 'Pick locked' : 'Missed pick'; statusClass = myWeekPick?'alive':'out'; }
+    else { statusLabel = myWeekPick ? 'Picked (editable)' : 'On the clock'; statusClass = myWeekPick?'alive':''; }
+    return `<div class="standing-row">
+      <div class="s-name ${st.eliminated?'dead':''}">${avatarFor(m.user_id)} ${escapeHtml(nameFor(m.user_id))}</div>
+      <div class="lives">${dots}</div>
+      <div class="s-status ${statusClass}">${statusLabel}</div>
+    </div>`;
+  }).join('');
+
+  const history = activePool.members.map(m=>{
+    const st = statusFor(m.user_id);
+    if(st.picks.length===0) return '';
+    const isMe = m.user_id === session.user.id;
+    const chips = st.picks.map(p=>{
+      const hidden = !pickWindowClosed(p.week) && !isMe;
+      if(hidden){
+        return `<span style="font-size:11px;border:1px solid var(--muted);color:var(--muted);padding:2px 6px;border-radius:5px;margin-right:4px;">W${p.week}: picked (hidden till kickoff)</span>`;
+      }
+      const outcome = resultFor(p.week,p.team);
+      const color = outcome==='win' ? 'var(--alive)' : outcome==='loss' ? 'var(--danger)' : 'var(--muted)';
+      return `<span style="font-size:11px;border:1px solid ${color};color:${color};padding:2px 6px;border-radius:5px;margin-right:4px;">W${p.week}: ${escapeHtml(p.team)}</span>`;
+    }).join('');
+    return `<div style="margin-bottom:8px;"><span style="font-size:12.5px;color:var(--muted);margin-right:6px;">${avatarFor(m.user_id)} ${escapeHtml(nameFor(m.user_id))}</span>${chips}</div>`;
+  }).join('');
+
+  return oddsPanel + `<div class="panel">${rows}</div>${history?`<div class="panel"><div class="section-label">Pick history</div>${history}</div>`:''}`;
+}
+
+function relativeCountdown(isoTime){
+  const diff = new Date(isoTime).getTime() - Date.now();
+  if(diff<=0) return null;
+  const days = Math.floor(diff/86400000);
+  const hours = Math.floor((diff%86400000)/3600000);
+  if(days>0) return `${days}d ${hours}h left`;
+  const mins = Math.floor((diff%3600000)/60000);
+  return `${hours}h ${mins}m left`;
+}
+function weekUsedFor(userId, team){
+  const hit = picksForUser(userId).find(p=>p.team===team);
+  return hit ? hit.week : null;
+}
+
+function renderPick(){
+  const cw = computeActiveWeek();
+  const myPick = (activePool.picks||[]).find(p=>p.user_id===session.user.id && p.week===cw);
+  const st = statusFor(session.user.id);
+  const statusBar = `<div class="panel" style="display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-size:13px;color:var(--muted);">Lives left</div>
+    <div class="lives">${Array.from({length:activePool.pool.lives_allowed}).map((_,i)=>`<span class="life-dot ${i<st.misses?'used':''}"></span>`).join('')}</div>
+  </div>`;
+  if(st.eliminated) return statusBar + `<div class="panel"><div class="empty">You were eliminated in week ${st.eliminatedWeek}. You can still talk smack.</div></div>`;
+  if(seasonOver()) return statusBar + `<div class="panel"><div class="empty">Season's over — check the standings.</div></div>`;
+  const teams = weekTeams(cw);
+  if(teams.length===0) return statusBar + `<div class="panel"><div class="empty">The commish hasn't added this week's matchups yet.</div></div>`;
+  const closed = pickWindowClosed(cw);
+  const kickoffLabel = formatKickoff(cw);
+  const countdown = (()=>{ const t = weekKickoff(cw); return t ? relativeCountdown(t) : null; })();
+
+  if(closed){
+    if(myPick){
+      const opp = opponentOf(myPick.team, cw);
+      const winPct = winPctFor(myPick.team, cw);
+      return statusBar + `<div class="panel"><div class="section-label">Week ${cw} pick</div>
+        <div class="pick-locked"><div class="tname">${escapeHtml(myPick.team)}</div>
+        ${opp?`<div style="font-size:13px;color:var(--muted);">vs ${escapeHtml(opp)}${winPct!=null?` · ${winPct}% favorite`:''}</div>`:''}
+        <div style="font-size:12.5px;color:var(--muted);margin-top:4px;">Locked — kickoff has passed.</div></div></div>`;
+    }
+    return statusBar + `<div class="panel"><div class="empty">Kickoff passed for Week ${cw} and you didn't lock in a pick.</div></div>`;
+  }
+
+  const counts = teamUseCounts(session.user.id);
+  const cap = maxTeamUses();
+  const withPct = teams.map(team=>({ team, pct: winPctFor(team, cw) }));
+  withPct.sort((a,b)=>{
+    if(a.pct==null && b.pct==null) return 0;
+    if(a.pct==null) return 1;
+    if(b.pct==null) return -1;
+    return b.pct - a.pct;
+  });
+  const topPct = withPct.length && withPct[0].pct!=null ? withPct[0].pct : null;
+  const cards = withPct.map(({team, pct})=>{
+    const usedCount = counts[team]||0;
+    const isMaxed = usedCount >= cap;
+    const isUsed = isMaxed && (!myPick || myPick.team!==team);
+    const isSel = selectedTeamDraft ? selectedTeamDraft===team : (myPick && myPick.team===team);
+    const opp = opponentOf(team, cw);
+    const isFavorite = pct!=null && pct===topPct && pct>50;
+    const oddsBadge = pct!=null ? ` · <span style="color:var(--alive);font-weight:600;">${pct}%</span>${isFavorite?' <span style="color:var(--accent);font-weight:600;">★ favorite</span>':''}` : '';
+    const capLabel = cap===Infinity ? '' : ` (${usedCount}/${cap} used)`;
+    return `<button class="team-card ${isSel?'selected':''} ${isUsed?'used':''}" data-team="${escapeHtml(team)}" ${isUsed?'disabled':''}>
+      <div class="tname">${teamInfo(team).logo_url?`<img src="${teamInfo(team).logo_url}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-3px;margin-right:4px;"/>`:''}${escapeHtml(team)}</div>
+      <div class="tmeta">${isUsed?`Limit reached${capLabel}`:(opp?`vs ${escapeHtml(opp)}${oddsBadge}${capLabel}`:'')}</div>
+    </button>`;
+  }).join('');
+  const canSave = !!(selectedTeamDraft || myPick);
+  return statusBar + `<div class="panel">
+    <div class="section-label">Week ${cw} — pick a team to survive on</div>
+    ${kickoffLabel?`<div style="font-size:13px;color:var(--accent);margin-bottom:10px;">Picks lock ${escapeHtml(kickoffLabel)}${countdown?` (${countdown})`:''} — change your mind until then.</div>`:''}
+    ${myPick?`<div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Current pick: <b style="color:var(--ink);">${escapeHtml(myPick.team)}</b></div>`:''}
+    <div class="team-grid">${cards}</div>
+    <div style="margin-top:14px;"><button class="btn btn-accent" id="save-pick-btn" ${canSave?'':'disabled'} ${loading?'disabled':''}>${loading?'Saving…':(myPick?'Update pick':'Save pick')}</button></div>
+    <div class="helper">${cap===Infinity ? 'No limit on how many times a team can be picked.' : `Each team can be picked up to ${cap} time${cap===1?'':'s'} all season.`} Sorted by best odds first when available.</div>
+  </div>`;
+}
+
+function renderChat(){
+  const list = activePool.chat.slice().reverse().map(m=>`
+    <div class="chat-msg">
+      <div class="who-line">${avatarFor(m.user_id)} ${escapeHtml(m.display_name)}</div>
+      <div>${escapeHtml(m.message)}</div>
+      <div class="helper">${new Date(m.created_at).toLocaleString()}</div>
+    </div>`).join('');
+  return `<div class="panel">
+    <div class="chat-list" id="chat-list">${list || '<div class="empty">No trash talk yet.</div>'}</div>
+    <div class="chat-input-row">
+      <textarea id="chat-text" placeholder="Say something..."></textarea>
+      <button class="btn btn-accent" id="send-chat-btn" ${loading?'disabled':''}>Send</button>
+    </div>
+  </div>`;
+}
+
+function defaultScoreWeek(){
+  const weeks = [...new Set((activePool.matchups||[]).map(m=>m.week))].sort((a,b)=>a-b);
+  const closedWeeks = weeks.filter(w=>pickWindowClosed(w));
+  if(closedWeeks.length) return closedWeeks[closedWeeks.length-1];
+  return weeks.length ? weeks[0] : activePool.pool.current_week;
+}
+
+function renderCommish(){
+  const p = activePool.pool;
+  const cw = computeActiveWeek();
+  const scoreWeek = scoreWeekSelection || defaultScoreWeek();
+  const teamsThisWeek = weekTeams(scoreWeek);
+  const resultsRows = teamsThisWeek.map(team=>{
+    const cur = pendingResults[team] !== undefined ? pendingResults[team] : resultFor(scoreWeek,team);
+    return `<div class="result-row"><div class="rname">${escapeHtml(team)}</div>
+      <div class="toggle-group">
+        <button class="toggle-btn win ${cur==='win'?'active':''}" data-rteam="${escapeHtml(team)}" data-rval="win">Won</button>
+        <button class="toggle-btn loss ${cur==='loss'?'active':''}" data-rteam="${escapeHtml(team)}" data-rval="loss">Lost</button>
+      </div></div>`;
+  }).join('');
+  const allTeams = allTeamsUsed();
+
+  return `<div class="panel">
+      <div class="section-label">Invite code</div>
+      <div class="invite-code">${escapeHtml(p.invite_code)}</div>
+      <div class="helper">Share this with your league so they can join. People are picking for <b style="color:var(--ink);">Week ${cw}</b> right now — that advances on its own at kickoff.</div>
+    </div>
+
+    <div class="panel">
+      <div class="section-label">Score results</div>
+      <div class="field"><label>Week</label><input id="score-week-input" type="number" min="1" max="${p.total_weeks}" value="${scoreWeek}"/></div>
+      ${teamsThisWeek.length ? resultsRows : '<div class="helper">No matchups exist for that week yet — add them below.</div>'}
+      ${teamsThisWeek.length ? `<div style="margin-top:12px;"><button class="btn btn-accent" id="save-results-btn" ${loading?'disabled':''}>${loading?'Saving…':'Save results'}</button></div>` : ''}
+    </div>
+
+    ${weekMatchups(scoreWeek).length ? `<div class="panel">
+      <div class="section-label">Update win odds for Week ${scoreWeek}</div>
+      <div class="helper" style="margin-bottom:10px;">Type either team's win % — the other side fills in automatically.</div>
+      ${weekMatchups(scoreWeek).map(m=>{
+        const aPct = m.home_win_pct!=null ? Math.round(m.home_win_pct) : '';
+        const bPct = aPct!=='' ? 100-aPct : '';
+        return `
+        <div style="border:1px solid var(--line);border-radius:var(--radius);padding:10px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="flex:1;font-size:13px;">${escapeHtml(m.team_a)}</span>
+            <input data-odds-a="${m.id}" type="number" min="1" max="99" style="width:64px;" value="${aPct}" placeholder="%"/>
+            <span style="font-size:12px;color:var(--muted);">%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="flex:1;font-size:13px;">${escapeHtml(m.team_b)}</span>
+            <input data-odds-b="${m.id}" type="number" min="1" max="99" style="width:64px;" value="${bPct}" placeholder="%"/>
+            <span style="font-size:12px;color:var(--muted);">%</span>
+          </div>
+        </div>`;
+      }).join('')}
+      <button class="btn btn-ghost btn-sm" id="save-odds-btn" ${loading?'disabled':''}>${loading?'Saving…':'Save odds'}</button>
+    </div>` : ''}
+
+    <details class="panel">
+      <summary><span>Bulk update odds for multiple weeks<div class="summary-sub">Paste a full-season projection at once</div></span></summary>
+      <div class="details-body">
+        <div class="field">
+          <label>Format: "Week N" on its own line, then one "TeamName percent" line per team in that matchup. Only updates weeks/teams that already have matchups.</label>
+          <textarea id="bulk-odds" rows="8" placeholder="Week 1&#10;Fred 26&#10;Ben/Clint 74&#10;Ketchel's 59&#10;John 41&#10;&#10;Week 2&#10;Fred 31&#10;Ketchel's 69&#10;..."></textarea>
+        </div>
+        <button class="btn btn-accent" id="bulk-odds-btn" ${loading?'disabled':''}>${loading?'Saving…':'Save all odds'}</button>
+      </div>
+    </details>
+
+    ${allTeams.length ? `<div class="panel">
+      <div class="section-label">Team registry</div>
+      ${allTeams.map(t=>{
+        const info = teamInfo(t);
+        const logoPreview = pendingTeamLogos[t] || info.logo_url;
+        return `<div style="border:1px solid var(--line);border-radius:var(--radius);padding:10px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            ${logoPreview ? `<img src="${logoPreview}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;"/>` : ''}
+            <input data-rename-old="${escapeHtml(t)}" value="${escapeHtml(t)}" style="flex:1;"/>
+          </div>
+          <input data-owner-team="${escapeHtml(t)}" value="${escapeHtml(info.owner_label||'')}" placeholder="Owner (e.g. Fred Dyson)" style="margin-bottom:6px;"/>
+          <input type="file" data-logo-team="${escapeHtml(t)}" accept="image/*" style="width:100%;margin-bottom:6px;"/>
+          <button class="btn btn-ghost btn-sm" data-rename-btn="${escapeHtml(t)}">Save team</button>
+        </div>`;
+      }).join('')}
+      <div class="helper">Renaming updates it everywhere — past picks, results, and matchups all follow along. Owner and logo are just for display.</div>
+    </div>` : ''}
+
+    <details class="panel">
+      <summary><span>Add or import matchups<div class="summary-sub">Bulk-paste the season, or add one week at a time</div></span></summary>
+      <div class="details-body">
+        <div class="section-label">Import full season (one-time)</div>
+        <div class="field">
+          <label>Format: "Week 1 | 2026-09-10T20:15" then that week's matchups, blank line, next week.</label>
+          <textarea id="bulk-schedule" rows="8" placeholder="Week 1 | 2026-09-10T20:15&#10;Fred vs Ben/Clint&#10;..."></textarea>
+        </div>
+        <button class="btn btn-accent" id="import-bulk-btn" ${loading?'disabled':''}>${loading?'Importing…':'Import all weeks'}</button>
+        <div class="helper" style="margin-bottom:16px;">Safe to run more than once — skips weeks that already have matchups.</div>
+
+        <div class="section-label">Add Week ${cw} matchups</div>
+        <div class="field">
+          <label>One per line: TeamA vs TeamB</label>
+          <textarea id="matchup-lines" rows="4" placeholder="Chase vs Heath&#10;Rob vs Pete"></textarea>
+        </div>
+        <div class="field"><label>Kickoff time (picks lock at this time)</label><input id="matchup-kickoff" type="datetime-local"/></div>
+        <button class="btn btn-accent" id="add-matchups-btn" ${loading?'disabled':''}>${loading?'Adding…':'Add matchups'}</button>
+        ${teamsThisWeek.length ? `<div class="helper" style="margin-top:8px;">Week ${cw} so far: ${escapeHtml(weekMatchups(cw).map(m=>m.team_a+' vs '+m.team_b).join(', '))}</div>` : ''}
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary><span>Enter or fix a member's pick<div class="summary-sub">For stragglers, or picking on someone's behalf</div></span></summary>
+      <div class="details-body">
+        <div class="field"><label>Member</label><select id="override-member">${activePool.members.map(m=>`<option value="${m.user_id}">${escapeHtml(nameFor(m.user_id))}</option>`).join('')}</select></div>
+        <div class="field"><label>Week</label><input id="override-week" type="number" min="1" max="${p.total_weeks}" value="${cw}"/></div>
+        <div class="field"><label>Team</label><select id="override-team">${(weekTeams(cw).length?weekTeams(cw):['— add matchups first —']).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}</select></div>
+        <button class="btn btn-accent" id="override-pick-btn" ${loading?'disabled':''}>${loading?'Saving…':'Save pick for member'}</button>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary><span>Settings</span></summary>
+      <div class="details-body">
+        <div class="field"><label>Lives allowed</label><input id="settings-lives" type="number" min="1" max="5" value="${p.lives_allowed}"/></div>
+        <div class="field"><label>Total weeks</label><input id="settings-weeks" type="number" min="1" max="25" value="${p.total_weeks}"/></div>
+        <div class="field"><label>Times each team can be picked per season (0 = unlimited)</label><input id="settings-max-uses" type="number" min="0" max="20" value="${p.max_team_uses==null?1:p.max_team_uses}"/></div>
+        ${p.game_type==='nfl_survivor' ? `<div class="field"><label>The Odds API key (free tier at the-odds-api.com)</label><input id="settings-odds-key" value="${escapeHtml(p.odds_api_key||'')}" placeholder="paste your API key"/></div>` : ''}
+        <button class="btn btn-ghost btn-sm" id="save-settings-btn" ${loading?'disabled':''}>Save settings</button>
+      </div>
+    </details>
+
+    ${p.game_type==='nfl_survivor' ? `<div class="panel">
+      <div class="section-label">Live NFL odds</div>
+      <div class="helper" style="margin-bottom:10px;">Pulls real moneyline odds for Week ${cw}'s matchups and converts them to win percentages shown on the pick screen.</div>
+      <button class="btn btn-accent" id="fetch-odds-btn" ${loading?'disabled':''}>${loading?'Fetching…':'Fetch odds for Week '+cw}</button>
+    </div>` : ''}
+
+    <details class="panel">
+      <summary><span style="color:var(--danger);">Danger zone</span></summary>
+      <div class="details-body">
+        <div class="helper" style="margin-bottom:10px;">Permanently deletes this pool — members, picks, matchups, results, and chat all go with it.</div>
+        <button class="btn btn-danger btn-sm" id="delete-pool-btn" ${loading?'disabled':''}>${loading?'Deleting…':'Delete this pool'}</button>
+      </div>
+    </details>
+  `;
+}
+
+// ---------- events ----------
+function bindAuthEvents(){
+  el('switch-mode').onclick = ()=>{ authMode = authMode==='login'?'signup':'login'; errorMsg=''; render(); };
+  el('back-to-landing').onclick = ()=>{ showLanding=true; errorMsg=''; render(); };
+  el('auth-submit').onclick = async ()=>{
+    const email = el('auth-email').value.trim();
+    const pass = el('auth-pass').value;
+    if(!email || !pass){ errorMsg='Enter an email and password.'; render(); return; }
+    loading = true; errorMsg=''; render();
+    try{
+      if(authMode==='login'){
+        const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+        if(error) throw error;
+      } else {
+        const { data, error } = await sb.auth.signUp({ email, password: pass });
+        if(error) throw error;
+        const { data: { session: s0 } } = await sb.auth.getSession();
+        if(!s0 && data.user){
+          errorMsg = "Account created — check your email for a confirmation link, then come back and log in.";
+          loading = false; render(); return;
+        }
+      }
+      const { data: { session: s } } = await sb.auth.getSession();
+      session = s;
+      if(session){ await loadProfile(); if(profile) await loadMyPools(); }
+    }catch(e){
+      errorMsg = e.message || 'Something went wrong.';
+    }
+    loading = false; render();
+  };
+}
+
+function bindSetNameEvents(){
+  document.querySelectorAll('[data-avatar]').forEach(btn=>{
+    btn.onclick = ()=>{ selectedAvatar = btn.dataset.avatar; render(); };
+  });
+  const fileInput = el('avatar-file-input');
+  if(fileInput) fileInput.onchange = async ()=>{
+    const file = fileInput.files[0];
+    if(!file) return;
+    loading = true; errorMsg=''; render();
+    try{
+      selectedAvatar = await uploadAvatarImage(file);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+  el('save-name').onclick = async ()=>{
+    const name = el('display-name-input').value.trim();
+    if(!name){ errorMsg='Enter a name.'; render(); return; }
+    loading = true; errorMsg=''; render();
+    try{
+      const { error } = await sb.from('profiles').insert({ id: session.user.id, display_name: name, avatar: selectedAvatar });
+      if(error) throw error;
+      await loadProfile();
+      await loadMyPools();
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+}
+
+function bindDashboardEvents(){
+  const editProfileBtn = el('edit-profile-btn');
+  if(editProfileBtn) editProfileBtn.onclick = ()=>{ editingProfile=true; profileEditAvatar = profile.avatar || AVATAR_OPTIONS[0]; render(); };
+  const cancelProfileBtn = el('cancel-profile-btn');
+  if(cancelProfileBtn) cancelProfileBtn.onclick = ()=>{ editingProfile=false; render(); };
+  document.querySelectorAll('[data-profile-avatar]').forEach(btn=>{
+    btn.onclick = ()=>{ profileEditAvatar = btn.dataset.profileAvatar; render(); };
+  });
+  const profileFileInput = el('profile-avatar-file');
+  if(profileFileInput) profileFileInput.onchange = async ()=>{
+    const file = profileFileInput.files[0];
+    if(!file) return;
+    loading = true; errorMsg=''; render();
+    try{
+      profileEditAvatar = await uploadAvatarImage(file);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+  const saveProfileBtn = el('save-profile-btn');
+  if(saveProfileBtn) saveProfileBtn.onclick = async ()=>{
+    const name = el('profile-name-input').value.trim();
+    if(!name){ errorMsg='Enter a name.'; render(); return; }
+    loading = true; errorMsg=''; render();
+    try{
+      const { error } = await sb.from('profiles').update({ display_name: name, avatar: profileEditAvatar }).eq('id', session.user.id);
+      if(error) throw error;
+      await loadProfile();
+      editingProfile = false;
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  document.querySelectorAll('.pool-card').forEach(card=>{
+    card.onclick = async ()=>{
+      loading = true; render();
+      await loadPoolFull(card.dataset.poolId);
+      activeTab = 'standings';
+      loading = false; render();
+      subscribeChat();
+    };
+  });
+  el('logout-btn').onclick = async ()=>{ await sb.auth.signOut(); session=null; profile=null; myPools=[]; render(); };
+  el('create-pool-btn').onclick = async ()=>{
+    const name = el('new-pool-name').value.trim();
+    const gameType = el('new-pool-type').value;
+    const lives = Number(el('new-pool-lives').value)||2;
+    const weeks = Number(el('new-pool-weeks').value)||15;
+    if(!name){ errorMsg='Give your pool a name.'; render(); return; }
+    loading = true; errorMsg=''; render();
+    try{
+      const invite_code = genCode();
+      const { data: pool, error } = await sb.from('pools').insert({
+        name, game_type: gameType, owner_id: session.user.id, invite_code,
+        lives_allowed: lives, total_weeks: weeks, current_week: 1
+      }).select().single();
+      if(error) throw error;
+      const { error: e2 } = await sb.from('pool_members').insert({ pool_id: pool.id, user_id: session.user.id });
+      if(e2) throw e2;
+      await loadMyPools();
+      await loadPoolFull(pool.id);
+      activeTab = 'commish';
+      subscribeChat();
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+  el('join-pool-btn').onclick = async ()=>{
+    const code = el('join-code').value.trim().toUpperCase();
+    if(!code){ errorMsg='Enter an invite code.'; render(); return; }
+    loading = true; errorMsg=''; render();
+    try{
+      const { data: pool, error } = await sb.from('pools').select('*').eq('invite_code', code).maybeSingle();
+      if(error) throw error;
+      if(!pool){ errorMsg = 'No pool found with that code.'; loading=false; render(); return; }
+      const { error: e2 } = await sb.from('pool_members').insert({ pool_id: pool.id, user_id: session.user.id });
+      if(e2 && !String(e2.message).includes('duplicate')) throw e2;
+      await loadMyPools();
+      await loadPoolFull(pool.id);
+      activeTab = 'standings';
+      subscribeChat();
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+}
+
+let chatChannel = null;
+function subscribeChat(){
+  if(chatChannel) sb.removeChannel(chatChannel);
+  const poolId = activePool.pool.id;
+  chatChannel = sb.channel('pool-'+poolId)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'chat_messages', filter:`pool_id=eq.${poolId}` }, payload=>{
+      activePool.chat.push(payload.new);
+      if(activeTab==='chat') render();
+    })
+    .on('postgres_changes', { event:'*', schema:'public', table:'picks', filter:`pool_id=eq.${poolId}` }, async ()=>{
+      await loadPoolFull(poolId); render();
+    })
+    .on('postgres_changes', { event:'*', schema:'public', table:'results', filter:`pool_id=eq.${poolId}` }, async ()=>{
+      await loadPoolFull(poolId); render();
+    })
+    .on('postgres_changes', { event:'*', schema:'public', table:'matchups', filter:`pool_id=eq.${poolId}` }, async ()=>{
+      await loadPoolFull(poolId); render();
+    })
+    .on('postgres_changes', { event:'*', schema:'public', table:'pool_members', filter:`pool_id=eq.${poolId}` }, async ()=>{
+      await loadPoolFull(poolId); render();
+    })
+    .subscribe();
+}
+
+function bindPoolEvents(){
+  el('back-to-dashboard').onclick = ()=>{ if(chatChannel){ sb.removeChannel(chatChannel); chatChannel=null; } activePool=null; render(); };
+  const refreshBtn = el('refresh-pool-btn');
+  if(refreshBtn) refreshBtn.onclick = async ()=>{
+    loading = true; render();
+    await loadPoolFull(activePool.pool.id);
+    loading = false; render();
+  };
+  el('logout-btn').onclick = async ()=>{ if(chatChannel) sb.removeChannel(chatChannel); await sb.auth.signOut(); session=null; profile=null; activePool=null; render(); };
+  document.querySelectorAll('.tab').forEach(t=>{ t.onclick = ()=>{ activeTab=t.dataset.tab; selectedTeamDraft=null; pendingResults={}; scoreWeekSelection=null; render(); }; });
+
+  document.querySelectorAll('.team-card:not(.used)').forEach(c=>{
+    c.onclick = ()=>{ selectedTeamDraft = c.dataset.team; render(); };
+  });
+  const saveBtn = el('save-pick-btn');
+  if(saveBtn) saveBtn.onclick = async ()=>{
+    const cw = activePool.pool.current_week;
+    const existing = (activePool.picks||[]).find(p=>p.user_id===session.user.id && p.week===cw);
+    const team = selectedTeamDraft || (existing && existing.team);
+    if(!team) return;
+    loading = true; render();
+    try{
+      const { error } = await sb.from('picks').upsert({ pool_id: activePool.pool.id, user_id: session.user.id, week: cw, team }, { onConflict:'pool_id,user_id,week' });
+      if(error) throw error;
+      selectedTeamDraft = null;
+      await loadPoolFull(activePool.pool.id);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  const sendChatBtn = el('send-chat-btn');
+  if(sendChatBtn) sendChatBtn.onclick = async ()=>{
+    const text = el('chat-text').value.trim();
+    if(!text) return;
+    loading = true; render();
+    try{
+      const { error } = await sb.from('chat_messages').insert({ pool_id: activePool.pool.id, user_id: session.user.id, display_name: profile.display_name, message: text });
+      if(error) throw error;
+      await loadPoolFull(activePool.pool.id);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  const importBulkBtn = el('import-bulk-btn');
+  if(importBulkBtn) importBulkBtn.onclick = async ()=>{
+    const raw = el('bulk-schedule').value;
+    const lines = raw.split('\n').map(l=>l.trim());
+    const weekHeaderRe = /^week\s+(\d+)\s*\|\s*(.+)$/i;
+    const rows = [];
+    let curWeek = null, curKickoffISO = null;
+    let badLines = [];
+    for(const line of lines){
+      if(!line) continue;
+      const hm = line.match(weekHeaderRe);
+      if(hm){
+        curWeek = Number(hm[1]);
+        const d = new Date(hm[2].trim());
+        if(isNaN(d.getTime())){ badLines.push(line); curWeek = null; continue; }
+        curKickoffISO = d.toISOString();
+        continue;
+      }
+      if(curWeek===null) continue;
+      const parsed = parseMatchupLine(line);
+      if(!parsed){ badLines.push(line); continue; }
+      rows.push({ pool_id: activePool.pool.id, week: curWeek, team_a: parsed.team_a, team_b: parsed.team_b, kickoff_time: curKickoffISO, home_win_pct: parsed.home_win_pct });
+    }
+    if(!rows.length){ errorMsg='Nothing parsed — check the format matches the example.'; render(); return; }
+    const existingWeeks = new Set((activePool.matchups||[]).map(m=>m.week));
+    const toInsert = rows.filter(r=>!existingWeeks.has(r.week));
+    const skippedWeeks = [...new Set(rows.filter(r=>existingWeeks.has(r.week)).map(r=>r.week))];
+    loading = true; errorMsg=''; render();
+    try{
+      if(toInsert.length){
+        const { error } = await sb.from('matchups').insert(toInsert);
+        if(error) throw error;
+      }
+      await loadPoolFull(activePool.pool.id);
+      if(badLines.length) errorMsg = `Imported, but couldn't read these lines: ${badLines.join(' | ')}`;
+      else if(skippedWeeks.length) errorMsg = `Imported. Skipped weeks that already had matchups: ${skippedWeeks.join(', ')}.`;
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  const addMatchupsBtn = el('add-matchups-btn');
+  if(addMatchupsBtn) addMatchupsBtn.onclick = async ()=>{
+    const lines = el('matchup-lines').value.split('\n').map(l=>l.trim()).filter(Boolean);
+    const kickoffLocal = el('matchup-kickoff').value;
+    if(!lines.length || !kickoffLocal){ errorMsg='Add at least one matchup and a kickoff time.'; render(); return; }
+    const kickoffISO = new Date(kickoffLocal).toISOString();
+    const rows = [];
+    for(const line of lines){
+      const parsed = parseMatchupLine(line);
+      if(!parsed) continue;
+      rows.push({ pool_id: activePool.pool.id, week: computeActiveWeek(), team_a: parsed.team_a, team_b: parsed.team_b, kickoff_time: kickoffISO, home_win_pct: parsed.home_win_pct });
+    }
+    if(!rows.length){ errorMsg='Use the format "TeamA vs TeamB", one per line.'; render(); return; }
+    loading = true; errorMsg=''; render();
+    try{
+      const { error } = await sb.from('matchups').insert(rows);
+      if(error) throw error;
+      await loadPoolFull(activePool.pool.id);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  document.querySelectorAll('[data-rteam]').forEach(btn=>{
+    btn.onclick = ()=>{ pendingResults[btn.dataset.rteam] = btn.dataset.rval; render(); };
+  });
+
+  document.querySelectorAll('[data-logo-team]').forEach(inp=>{
+    inp.onchange = async ()=>{
+      const file = inp.files[0];
+      if(!file) return;
+      const team = inp.dataset.logoTeam;
+      loading = true; errorMsg=''; render();
+      try{
+        pendingTeamLogos[team] = await uploadAvatarImage(file);
+      }catch(e){ errorMsg = e.message; }
+      loading = false; render();
+    };
+  });
+
+  document.querySelectorAll('[data-rename-btn]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const oldName = btn.dataset.renameBtn;
+      const nameInput = document.querySelector(`[data-rename-old="${CSS.escape(oldName)}"]`);
+      const ownerInput = document.querySelector(`[data-owner-team="${CSS.escape(oldName)}"]`);
+      const newName = nameInput.value.trim();
+      const ownerLabel = ownerInput ? ownerInput.value.trim() : '';
+      const logoUrl = pendingTeamLogos[oldName] || teamInfo(oldName).logo_url || null;
+      if(!newName) return;
+      loading = true; errorMsg=''; render();
+      try{
+        const poolId = activePool.pool.id;
+        if(newName !== oldName){
+          const results = await Promise.all([
+            sb.from('matchups').update({ team_a: newName }).eq('pool_id', poolId).eq('team_a', oldName),
+            sb.from('matchups').update({ team_b: newName }).eq('pool_id', poolId).eq('team_b', oldName),
+            sb.from('picks').update({ team: newName }).eq('pool_id', poolId).eq('team', oldName),
+            sb.from('results').update({ team: newName }).eq('pool_id', poolId).eq('team', oldName)
+          ]);
+          const failed = results.find(r=>r.error);
+          if(failed) throw failed.error;
+        }
+        const { error: teamErr } = await sb.from('teams').upsert(
+          { pool_id: poolId, name: newName, owner_label: ownerLabel || null, logo_url: logoUrl },
+          { onConflict: 'pool_id,name' }
+        );
+        if(teamErr) throw teamErr;
+        delete pendingTeamLogos[oldName];
+        await loadPoolFull(poolId);
+      }catch(e){ errorMsg = e.message; }
+      loading = false; render();
+    };
+  });
+
+  const overrideWeekInput = el('override-week');
+  if(overrideWeekInput) overrideWeekInput.oninput = ()=>{
+    const w = Number(overrideWeekInput.value)||activePool.pool.current_week;
+    const teams = weekTeams(w);
+    const sel = el('override-team');
+    sel.innerHTML = (teams.length?teams:['— no matchups for this week yet —']).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  };
+  const overridePickBtn = el('override-pick-btn');
+  if(overridePickBtn) overridePickBtn.onclick = async ()=>{
+    const userId = el('override-member').value;
+    const week = Number(el('override-week').value);
+    const team = el('override-team').value;
+    if(!userId || !week || !team){ errorMsg='Pick a member, week, and team.'; render(); return; }
+    loading = true; errorMsg=''; render();
+    try{
+      const { error } = await sb.from('picks').upsert({ pool_id: activePool.pool.id, user_id: userId, week, team }, { onConflict:'pool_id,user_id,week' });
+      if(error) throw error;
+      await loadPoolFull(activePool.pool.id);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  document.querySelectorAll('[data-odds-a]').forEach(inpA=>{
+    const inpB = document.querySelector(`[data-odds-b="${inpA.dataset.oddsA}"]`);
+    if(!inpB) return;
+    inpA.oninput = ()=>{ const v = Number(inpA.value); if(v>=1 && v<=99) inpB.value = 100-v; };
+    inpB.oninput = ()=>{ const v = Number(inpB.value); if(v>=1 && v<=99) inpA.value = 100-v; };
+  });
+  const bulkOddsBtn = el('bulk-odds-btn');
+  if(bulkOddsBtn) bulkOddsBtn.onclick = async ()=>{
+    const raw = el('bulk-odds').value;
+    const lines = raw.split('\n').map(l=>l.trim());
+    const weekHeaderRe = /^week\s+(\d+)\s*$/i;
+    let curWeek = null;
+    const byWeek = {};
+    for(const line of lines){
+      if(!line) continue;
+      const hm = line.match(weekHeaderRe);
+      if(hm){ curWeek = Number(hm[1]); byWeek[curWeek] = byWeek[curWeek] || {}; continue; }
+      if(curWeek===null) continue;
+      const m = line.match(/^(.+?)\s+(\d{1,3})$/);
+      if(!m) continue;
+      byWeek[curWeek][m[1].trim()] = Number(m[2]);
+    }
+    loading = true; errorMsg=''; render();
+    try{
+      const updates = [];
+      let matched = 0, unmatched = [];
+      Object.keys(byWeek).forEach(week=>{
+        const teamPcts = byWeek[week];
+        const weekNum = Number(week);
+        weekMatchups(weekNum).forEach(m=>{
+          let pct = null;
+          if(teamPcts[m.team_a]!==undefined) pct = teamPcts[m.team_a];
+          else if(teamPcts[m.team_b]!==undefined) pct = 100 - teamPcts[m.team_b];
+          if(pct==null){ unmatched.push(`Week ${week}: ${m.team_a} vs ${m.team_b}`); return; }
+          matched++;
+          updates.push(sb.from('matchups').update({ home_win_pct: Math.min(99,Math.max(1,pct)) }).eq('id', m.id));
+        });
+      });
+      const results = await Promise.all(updates);
+      const failed = results.find(r=>r.error);
+      if(failed) throw failed.error;
+      await loadPoolFull(activePool.pool.id);
+      errorMsg = `Updated ${matched} matchup(s).` + (unmatched.length ? ` No data for: ${unmatched.join(', ')}.` : '');
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  const saveOddsBtn = el('save-odds-btn');
+  if(saveOddsBtn) saveOddsBtn.onclick = async ()=>{
+    const inputs = document.querySelectorAll('[data-odds-a]');
+    loading = true; errorMsg=''; render();
+    try{
+      const updates = [];
+      inputs.forEach(inp=>{
+        const val = inp.value.trim();
+        if(val==='') return;
+        const pct = Math.min(99, Math.max(1, Number(val)));
+        updates.push(sb.from('matchups').update({ home_win_pct: pct }).eq('id', inp.dataset.oddsA));
+      });
+      const results = await Promise.all(updates);
+      const failed = results.find(r=>r.error);
+      if(failed) throw failed.error;
+      await loadPoolFull(activePool.pool.id);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  const scoreWeekInput = el('score-week-input');
+  if(scoreWeekInput) scoreWeekInput.onchange = ()=>{
+    scoreWeekSelection = Number(scoreWeekInput.value)||scoreWeekSelection;
+    pendingResults = {};
+    render();
+  };
+
+  const saveResultsBtn = el('save-results-btn');
+  if(saveResultsBtn) saveResultsBtn.onclick = async ()=>{
+    const week = scoreWeekSelection || defaultScoreWeek();
+    const teams = weekTeams(week);
+    const missing = teams.filter(t=> pendingResults[t]===undefined && resultFor(week,t)===null);
+    if(missing.length && !confirm(`No result set for: ${missing.join(', ')}. Continue anyway?`)) return;
+    loading = true; errorMsg=''; render();
+    try{
+      const rows = Object.keys(pendingResults).map(team=>({ pool_id: activePool.pool.id, week, team, outcome: pendingResults[team] }));
+      if(rows.length){
+        const { error } = await sb.from('results').upsert(rows, { onConflict:'pool_id,week,team' });
+        if(error) throw error;
+      }
+      pendingResults = {};
+      await loadPoolFull(activePool.pool.id);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  const saveSettingsBtn = el('save-settings-btn');
+  if(saveSettingsBtn) saveSettingsBtn.onclick = async ()=>{
+    const lives = Number(el('settings-lives').value)||activePool.pool.lives_allowed;
+    const weeks = Number(el('settings-weeks').value)||activePool.pool.total_weeks;
+    const maxUses = Number(el('settings-max-uses').value);
+    const oddsKeyInput = el('settings-odds-key');
+    const update = { lives_allowed: lives, total_weeks: weeks, max_team_uses: isNaN(maxUses)?1:maxUses };
+    if(oddsKeyInput) update.odds_api_key = oddsKeyInput.value.trim();
+    loading = true; render();
+    try{
+      const { error } = await sb.from('pools').update(update).eq('id', activePool.pool.id);
+      if(error) throw error;
+      await loadPoolFull(activePool.pool.id);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  const fetchOddsBtn = el('fetch-odds-btn');
+  if(fetchOddsBtn) fetchOddsBtn.onclick = async ()=>{
+    const key = activePool.pool.odds_api_key;
+    if(!key){ errorMsg='Add your Odds API key in Settings first.'; render(); return; }
+    loading = true; errorMsg=''; render();
+    try{
+      const week = computeActiveWeek();
+      const matchupsThisWeek = weekMatchups(week);
+      const resp = await fetch(`https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey=${encodeURIComponent(key)}&regions=us&markets=h2h&oddsFormat=american`);
+      if(!resp.ok) throw new Error('Odds API request failed ('+resp.status+'). Check your API key.');
+      const games = await resp.json();
+      let matched = 0, unmatched = [];
+      for(const m of matchupsThisWeek){
+        const game = games.find(g=>{
+          const home = (g.home_team||'').toLowerCase();
+          const away = (g.away_team||'').toLowerCase();
+          const a = m.team_a.toLowerCase(), b = m.team_b.toLowerCase();
+          return (home.includes(a) || a.includes(home) || home.includes(b) || b.includes(home)) &&
+                 (away.includes(a) || a.includes(away) || away.includes(b) || b.includes(away));
+        });
+        if(!game || !game.bookmakers || !game.bookmakers.length){ unmatched.push(m.team_a+' vs '+m.team_b); continue; }
+        const market = game.bookmakers[0].markets.find(mk=>mk.key==='h2h');
+        if(!market){ unmatched.push(m.team_a+' vs '+m.team_b); continue; }
+        const homeOutcome = market.outcomes.find(o=>o.name===game.home_team);
+        const awayOutcome = market.outcomes.find(o=>o.name===game.away_team);
+        if(!homeOutcome || !awayOutcome){ unmatched.push(m.team_a+' vs '+m.team_b); continue; }
+        const homeProb = americanOddsToProb(homeOutcome.price);
+        const awayProb = americanOddsToProb(awayOutcome.price);
+        const normHome = homeProb/(homeProb+awayProb);
+        const teamAisHome = game.home_team.toLowerCase().includes(m.team_a.toLowerCase()) || m.team_a.toLowerCase().includes(game.home_team.toLowerCase());
+        const homeWinPct = Math.round((teamAisHome ? normHome : 1-normHome) * 100);
+        const { error } = await sb.from('matchups').update({ home_win_pct: homeWinPct }).eq('id', m.id);
+        if(!error) matched++;
+      }
+      await loadPoolFull(activePool.pool.id);
+      errorMsg = `Matched odds for ${matched} game(s).` + (unmatched.length ? ` Couldn't match: ${unmatched.join(', ')} — check team names match real NFL team names.` : '');
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  const deletePoolBtn = el('delete-pool-btn');
+  if(deletePoolBtn) deletePoolBtn.onclick = async ()=>{
+    if(!confirm(`Permanently delete "${activePool.pool.name}"? This wipes everyone's picks, matchups, and chat. Cannot be undone.`)) return;
+    loading = true; errorMsg=''; render();
+    try{
+      const { error } = await sb.from('pools').delete().eq('id', activePool.pool.id);
+      if(error) throw error;
+      if(chatChannel){ sb.removeChannel(chatChannel); chatChannel=null; }
+      activePool = null;
+      await loadMyPools();
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+}
+
+// ---------- boot ----------
+async function boot(){
+  const { data: { session: s } } = await sb.auth.getSession();
+  session = s;
+  if(session){
+    await loadProfile();
+    if(profile) await loadMyPools();
+  }
+  render();
+}
+sb.auth.onAuthStateChange((event, s)=>{ session = s; });
+boot();
+</script>
+</body>
+</html>
