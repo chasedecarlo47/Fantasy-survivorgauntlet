@@ -433,7 +433,7 @@ function renderDashboard(){
     </div>
     ${errorMsg ? `<div class="error-box">${escapeHtml(errorMsg)}</div>` : ''}
 
-    <div class="panel">
+    <div class="panel" style="padding:10px 16px;">
       ${editingProfile ? `
         <div class="field"><input id="profile-name-input" value="${escapeHtml(profile.display_name)}"/></div>
         <div style="font-size:28px;margin-bottom:8px;">${renderAvatarValue(profileEditAvatar)}</div>
@@ -448,34 +448,38 @@ function renderDashboard(){
         </div>
       ` : `
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:15px;">${renderAvatarValue(profile.avatar)} Playing as <b>${escapeHtml(profile.display_name)}</b></span>
+          <span style="font-size:14px;">${renderAvatarValue(profile.avatar)} <b>${escapeHtml(profile.display_name)}</b></span>
           <button class="btn btn-ghost btn-sm" id="edit-profile-btn">Edit profile</button>
         </div>
       `}
     </div>
 
-    ${poolCards || `<div class="panel"><div class="empty">You're not in any pools yet.</div></div>`}
-
-    <div class="panel">
-      <div class="section-label">Create a pool</div>
-      <div class="field"><label>Pool name</label><input id="new-pool-name" placeholder="e.g. Office Survivor Gauntlet"/></div>
-      <div class="field">
-        <label>Game type</label>
-        <select id="new-pool-type">
-          <option value="fantasy_survivor">Fantasy Survivor Gauntlet (your fantasy league's matchups)</option>
-          <option value="nfl_survivor">NFL Survivor (real NFL games)</option>
-        </select>
-      </div>
-      <div class="field"><label>Lives allowed before elimination</label><input id="new-pool-lives" type="number" value="2" min="1" max="5"/></div>
-      <div class="field"><label>Total weeks</label><input id="new-pool-weeks" type="number" value="15" min="1" max="25"/></div>
-      <button class="btn btn-accent" id="create-pool-btn" style="width:100%;" ${loading?'disabled':''}>${loading?'Creating…':'Create pool'}</button>
-    </div>
+    ${poolCards || `<div class="panel"><div class="empty">You're not in any pools yet — join one with a code below, or create your own.</div></div>`}
 
     <div class="panel">
       <div class="section-label">Join a pool</div>
-      <div class="field"><label>Invite code</label><input id="join-code" placeholder="e.g. 7XQK2M" style="text-transform:uppercase;"/></div>
-      <button class="btn btn-ghost" id="join-pool-btn" style="width:100%;" ${loading?'disabled':''}>${loading?'Joining…':'Join pool'}</button>
+      <div style="display:flex;gap:8px;">
+        <input id="join-code" placeholder="Enter invite code" style="text-transform:uppercase;flex:1;"/>
+        <button class="btn btn-accent" id="join-pool-btn" style="white-space:nowrap;" ${loading?'disabled':''}>${loading?'Joining…':'Join'}</button>
+      </div>
     </div>
+
+    <details class="panel">
+      <summary><span>Create a new pool<div class="summary-sub">Start a Fantasy Survivor Gauntlet or NFL Survivor pool</div></span></summary>
+      <div class="details-body">
+        <div class="field"><label>Pool name</label><input id="new-pool-name" placeholder="e.g. Office Survivor Gauntlet"/></div>
+        <div class="field">
+          <label>Game type</label>
+          <select id="new-pool-type">
+            <option value="fantasy_survivor">Fantasy Survivor Gauntlet (your fantasy league's matchups)</option>
+            <option value="nfl_survivor">NFL Survivor (real NFL games)</option>
+          </select>
+        </div>
+        <div class="field"><label>Lives allowed before elimination</label><input id="new-pool-lives" type="number" value="2" min="1" max="5"/></div>
+        <div class="field"><label>Total weeks</label><input id="new-pool-weeks" type="number" value="15" min="1" max="25"/></div>
+        <button class="btn btn-accent" id="create-pool-btn" style="width:100%;" ${loading?'disabled':''}>${loading?'Creating…':'Create pool'}</button>
+      </div>
+    </details>
   `;
 }
 
