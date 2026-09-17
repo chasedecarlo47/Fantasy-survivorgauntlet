@@ -182,14 +182,15 @@ async function loadMyPools(){
 }
 
 async function loadPoolFull(poolId){
-  const [{data: pool}, {data: memberRows}, {data: matchups}, {data: picks}, {data: results}, {data: chat}, {data: teams}] = await Promise.all([
+  const [{data: pool}, {data: memberRows}, {data: matchups}, {data: picks}, {data: results}, {data: chat}, {data: teams}, {data: placeholderRows}] = await Promise.all([
     sb.from('pools').select('*').eq('id', poolId).maybeSingle(),
     sb.from('pool_members').select('user_id').eq('pool_id', poolId),
     sb.from('matchups').select('*').eq('pool_id', poolId),
     sb.from('picks').select('*').eq('pool_id', poolId),
     sb.from('results').select('*').eq('pool_id', poolId),
     sb.from('chat_messages').select('*').eq('pool_id', poolId).order('created_at', {ascending:true}),
-    sb.from('teams').select('*').eq('pool_id', poolId)
+    sb.from('teams').select('*').eq('pool_id', poolId),
+    sb.from('placeholder_members').select('*').eq('pool_id', poolId)
   ]);
   const userIds = [...new Set((memberRows||[]).map(r=>r.user_id))];
   let profilesById = {};
@@ -197,9 +198,11 @@ async function loadPoolFull(poolId){
     const { data: profiles } = await sb.from('profiles').select('id, display_name, avatar').in('id', userIds);
     (profiles||[]).forEach(p=>{ profilesById[p.id] = p; });
   }
-  const members = (memberRows||[]).map(r=>({ user_id: r.user_id, profiles: profilesById[r.user_id] || { display_name:'Unknown', avatar:null } }));
+  const realMembers = (memberRows||[]).map(r=>({ user_id: r.user_id, isPlaceholder:false, profiles: profilesById[r.user_id] || { display_name:'Unknown', avatar:null } }));
+  const placeholderMembers = (placeholderRows||[]).map(ph=>({ user_id: ph.id, isPlaceholder:true, profiles: { display_name: ph.display_name, avatar: ph.avatar } }));
+  const members = [...realMembers, ...placeholderMembers];
   activePool = {
-    pool, members, matchups: matchups||[], picks: picks||[], results: results||[], chat: chat||[], teams: teams||[]
+    pool, members, matchups: matchups||[], picks: picks||[], results: results||[], chat: chat||[], teams: teams||[], placeholders: placeholderRows||[]
   };
 }
 
@@ -267,13 +270,24 @@ function resultFor(week, team){
   return r ? r.outcome : null;
 }
 function picksForUser(userId){
-  return (activePool.picks||[]).filter(p=>p.user_id===userId).sort((a,b)=>a.week-b.week);
+  return (activePool.picks||[]).filter(p=>p.user_id===userId || p.placeholder_id===userId).sort((a,b)=>a.week-b.week);
+}
+function weekAdvanceThreshold(week){
+  const k = weekKickoff(week);
+  if(!k) return null;
+  // Thursday kickoff + 5 days = the following Tuesday, after Sun/Mon games finish
+  return new Date(k).getTime() + 5*24*60*60*1000;
+}
+function weekFullyDone(week){
+  const t = weekAdvanceThreshold(week);
+  if(!t) return false;
+  return Date.now() >= t;
 }
 function computeActiveWeek(){
   const weeksWithMatchups = [...new Set((activePool.matchups||[]).map(m=>m.week))].sort((a,b)=>a-b);
   if(!weeksWithMatchups.length) return activePool.pool.current_week;
   for(const w of weeksWithMatchups){
-    if(!pickWindowClosed(w)) return w;
+    if(!weekFullyDone(w)) return w;
   }
   return weeksWithMatchups[weeksWithMatchups.length-1];
 }
@@ -576,7 +590,7 @@ function renderStandings(){
   const matchupCards = weekMatchups(cw).map(m=>{
     const aPct = m.home_win_pct!=null ? Math.round(m.home_win_pct) : null;
     const bPct = aPct!=null ? 100-aPct : null;
-    const pickersFor = (team)=> activePool.members.filter(mem => (activePool.picks||[]).some(p=>p.user_id===mem.user_id && p.week===cw && p.team===team));
+    const pickersFor = (team)=> activePool.members.filter(mem => (activePool.picks||[]).some(p=>(p.user_id===mem.user_id || p.placeholder_id===mem.user_id) && p.week===cw && p.team===team));
     const pickerHtml = (team)=>{
       const pickers = pickersFor(team);
       if(!pickers.length) return '';
@@ -598,14 +612,14 @@ function renderStandings(){
   const rows = activePool.members.map(m=>{
     const st = statusFor(m.user_id);
     const dots = Array.from({length:activePool.pool.lives_allowed}).map((_,i)=>`<span class="life-dot ${i<st.misses?'used':''}"></span>`).join('');
-    const myWeekPick = (activePool.picks||[]).find(p=>p.user_id===m.user_id && p.week===cw);
+    const myWeekPick = (activePool.picks||[]).find(p=>(p.user_id===m.user_id || p.placeholder_id===m.user_id) && p.week===cw);
     let statusLabel, statusClass;
     if(st.eliminated){ statusLabel = `Out — wk ${st.eliminatedWeek}`; statusClass='out'; }
     else if(seasonOver()){ statusLabel='Survived'; statusClass='alive'; }
     else if(closed){ statusLabel = myWeekPick ? 'Pick locked' : 'Missed pick'; statusClass = myWeekPick?'alive':'out'; }
     else { statusLabel = myWeekPick ? 'Picked (editable)' : 'On the clock'; statusClass = myWeekPick?'alive':''; }
     return `<div class="standing-row">
-      <div class="s-name ${st.eliminated?'dead':''}">${avatarFor(m.user_id)} ${escapeHtml(nameFor(m.user_id))}</div>
+      <div class="s-name ${st.eliminated?'dead':''}">${avatarFor(m.user_id)} ${escapeHtml(nameFor(m.user_id))}${m.isPlaceholder?` <span class="helper" style="display:inline;">(no account)</span>`:''}</div>
       <div class="lives">${dots}</div>
       <div class="s-status ${statusClass}">${statusLabel}</div>
     </div>`;
@@ -887,10 +901,41 @@ function renderCommish(){
     <details class="panel">
       <summary><span>Enter or fix a member's pick<div class="summary-sub">For stragglers, or picking on someone's behalf</div></span></summary>
       <div class="details-body">
-        <div class="field"><label>Member</label><select id="override-member">${activePool.members.map(m=>`<option value="${m.user_id}">${escapeHtml(nameFor(m.user_id))}</option>`).join('')}</select></div>
+        <div class="field"><label>Member</label><select id="override-member">${activePool.members.map(m=>`<option value="${m.user_id}">${escapeHtml(nameFor(m.user_id))}${m.isPlaceholder?' (no account yet)':''}</option>`).join('')}</select></div>
         <div class="field"><label>Week</label><input id="override-week" type="number" min="1" max="${p.total_weeks}" value="${cw}"/></div>
         <div class="field"><label>Team</label><select id="override-team">${(weekTeams(cw).length?weekTeams(cw):['— add matchups first —']).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}</select></div>
         <button class="btn btn-accent" id="override-pick-btn" ${loading?'disabled':''}>${loading?'Saving…':'Save pick for member'}</button>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary><span>Players without an account yet<div class="summary-sub">Add stand-ins, then merge into their real account once they join</div></span></summary>
+      <div class="details-body">
+        <div class="field"><label>Add a player by name (e.g. "The Greek")</label>
+          <div style="display:flex;gap:8px;">
+            <input id="new-placeholder-name" placeholder="Player name" style="flex:1;"/>
+            <button class="btn btn-ghost btn-sm" id="add-placeholder-btn" ${loading?'disabled':''}>Add</button>
+          </div>
+        </div>
+        ${(activePool.placeholders||[]).length ? `
+          <div class="divider"></div>
+          ${(activePool.placeholders||[]).map(ph=>{
+            const realOptions = activePool.members.filter(m=>!m.isPlaceholder);
+            return `<div style="border:1px solid var(--line);border-radius:var(--radius);padding:10px;margin-bottom:10px;">
+              <div style="font-weight:600;margin-bottom:6px;">${escapeHtml(ph.display_name)} <span class="helper" style="display:inline;">— no account yet</span></div>
+              <div class="field"><label>Once they've signed up and joined, merge their picks into their real account</label>
+                <select data-merge-target="${ph.id}">
+                  <option value="">— select their real account —</option>
+                  ${realOptions.map(m=>`<option value="${m.user_id}">${escapeHtml(nameFor(m.user_id))}</option>`).join('')}
+                </select>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-accent btn-sm" data-merge-btn="${ph.id}" ${loading?'disabled':''}>Merge picks in</button>
+                <button class="btn btn-ghost btn-sm" data-remove-placeholder="${ph.id}" ${loading?'disabled':''}>Remove</button>
+              </div>
+            </div>`;
+          }).join('')}
+        ` : ''}
       </div>
     </details>
 
@@ -1281,15 +1326,67 @@ function bindPoolEvents(){
     const sel = el('override-team');
     sel.innerHTML = (teams.length?teams:['— no matchups for this week yet —']).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   };
-  const overridePickBtn = el('override-pick-btn');
-  if(overridePickBtn) overridePickBtn.onclick = async ()=>{
-    const userId = el('override-member').value;
-    const week = Number(el('override-week').value);
-    const team = el('override-team').value;
-    if(!userId || !week || !team){ errorMsg='Pick a member, week, and team.'; render(); return; }
+  const addPlaceholderBtn = el('add-placeholder-btn');
+  if(addPlaceholderBtn) addPlaceholderBtn.onclick = async ()=>{
+    const name = el('new-placeholder-name').value.trim();
+    if(!name) return;
     loading = true; errorMsg=''; render();
     try{
-      const { error } = await sb.from('picks').upsert({ pool_id: activePool.pool.id, user_id: userId, week, team }, { onConflict:'pool_id,user_id,week' });
+      const { error } = await sb.from('placeholder_members').insert({ pool_id: activePool.pool.id, display_name: name });
+      if(error) throw error;
+      await loadPoolFull(activePool.pool.id);
+    }catch(e){ errorMsg = e.message; }
+    loading = false; render();
+  };
+
+  document.querySelectorAll('[data-merge-btn]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const placeholderId = btn.dataset.mergeBtn;
+      const targetSelect = document.querySelector(`[data-merge-target="${placeholderId}"]`);
+      const targetUserId = targetSelect.value;
+      if(!targetUserId){ errorMsg='Pick which real account to merge into first.'; render(); return; }
+      if(!confirm('Move all of this player\'s picks onto that real account? This can\'t be undone.')) return;
+      loading = true; errorMsg=''; render();
+      try{
+        const poolId = activePool.pool.id;
+        const { error: moveErr } = await sb.from('picks').update({ user_id: targetUserId, placeholder_id: null }).eq('placeholder_id', placeholderId);
+        if(moveErr) throw moveErr;
+        const { error: delErr } = await sb.from('placeholder_members').delete().eq('id', placeholderId);
+        if(delErr) throw delErr;
+        await loadPoolFull(poolId);
+      }catch(e){ errorMsg = e.message; }
+      loading = false; render();
+    };
+  });
+
+  document.querySelectorAll('[data-remove-placeholder]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      if(!confirm('Remove this player and any picks made for them?')) return;
+      loading = true; errorMsg=''; render();
+      try{
+        const { error } = await sb.from('placeholder_members').delete().eq('id', btn.dataset.removePlaceholder);
+        if(error) throw error;
+        await loadPoolFull(activePool.pool.id);
+      }catch(e){ errorMsg = e.message; }
+      loading = false; render();
+    };
+  });
+
+  const overridePickBtn = el('override-pick-btn');
+  if(overridePickBtn) overridePickBtn.onclick = async ()=>{
+    const memberId = el('override-member').value;
+    const week = Number(el('override-week').value);
+    const team = el('override-team').value;
+    if(!memberId || !week || !team){ errorMsg='Pick a member, week, and team.'; render(); return; }
+    const member = activePool.members.find(m=>m.user_id===memberId);
+    loading = true; errorMsg=''; render();
+    try{
+      let error;
+      if(member && member.isPlaceholder){
+        ({ error } = await sb.from('picks').upsert({ pool_id: activePool.pool.id, placeholder_id: memberId, week, team }, { onConflict:'pool_id,placeholder_id,week' }));
+      } else {
+        ({ error } = await sb.from('picks').upsert({ pool_id: activePool.pool.id, user_id: memberId, week, team }, { onConflict:'pool_id,user_id,week' }));
+      }
       if(error) throw error;
       await loadPoolFull(activePool.pool.id);
     }catch(e){ errorMsg = e.message; }
