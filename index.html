@@ -1493,7 +1493,7 @@ function bindPoolEvents(){
   };
 
   const scoreWeekInput = el('score-week-input');
-  if(scoreWeekInput) scoreWeekInput.onchange = ()=>{
+  if(scoreWeekInput) scoreWeekInput.oninput = ()=>{
     scoreWeekSelection = Number(scoreWeekInput.value)||scoreWeekSelection;
     pendingResults = {};
     render();
