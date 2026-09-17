@@ -909,6 +909,18 @@ function renderCommish(){
     </details>
 
     <details class="panel">
+      <summary><span>Member roster<div class="summary-sub">Who's signed up vs. who's still a stand-in</div></span></summary>
+      <div class="details-body">
+        ${activePool.members.map(m=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);">
+            <div style="display:flex;align-items:center;gap:8px;">${avatarFor(m.user_id)} <span>${escapeHtml(nameFor(m.user_id))}</span></div>
+            <span style="font-size:13px;font-weight:600;color:${m.isPlaceholder?'var(--danger)':'var(--accent)'};">${m.isPlaceholder?'No account yet':'✓ Signed up'}</span>
+          </div>
+        `).join('')}
+      </div>
+    </details>
+
+    <details class="panel">
       <summary><span>Players without an account yet<div class="summary-sub">Add stand-ins, then merge into their real account once they join</div></span></summary>
       <div class="details-body">
         <div class="field"><label>Add a player by name (e.g. "The Greek")</label>
