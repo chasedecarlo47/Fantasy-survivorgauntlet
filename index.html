@@ -314,7 +314,7 @@ function extractPctAssignments(blockText, knownTeams){
   const assignments = {};
   const lines = blockText.split('\n');
   for(const line of lines){
-    const pctRe = /(\d{1,3})\s*%/g;
+    const pctRe = /(\d{1,3})\s*(?:%|$)/g;
     const matches = [];
     let m;
     while((m = pctRe.exec(line))){ matches.push({ val:Number(m[1]), start:m.index, end:m.index+m[0].length }); }
