@@ -283,6 +283,54 @@ function weekFullyDone(week){
   if(!t) return false;
   return Date.now() >= t;
 }
+function normTeam(s){
+  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,' ').trim();
+}
+function levenshtein(a,b){
+  const dp = [];
+  for(let i=0;i<=a.length;i++){ dp[i] = [i]; }
+  for(let j=0;j<=b.length;j++){ dp[0][j] = j; }
+  for(let i=1;i<=a.length;i++){
+    for(let j=1;j<=b.length;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j-1],dp[i-1][j],dp[i][j-1]);
+    }
+  }
+  return dp[a.length][b.length];
+}
+function fuzzyTeamMatch(input, knownTeams){
+  const ni = normTeam(input);
+  if(!ni) return null;
+  for(const t of knownTeams) if(normTeam(t)===ni) return t;
+  for(const t of knownTeams){ const nt=normTeam(t); if(nt.startsWith(ni)||ni.startsWith(nt)) return t; }
+  let best=null, bestDist=Infinity;
+  for(const t of knownTeams){
+    const d = levenshtein(ni, normTeam(t));
+    if(d<bestDist){ bestDist=d; best=t; }
+  }
+  const threshold = Math.max(3, Math.floor(normTeam(best||'').length*0.25));
+  return (best!==null && bestDist<=threshold) ? best : null;
+}
+function extractPctAssignments(blockText, knownTeams){
+  const assignments = {};
+  const lines = blockText.split('\n');
+  for(const line of lines){
+    const pctRe = /(\d{1,3})\s*%/g;
+    const matches = [];
+    let m;
+    while((m = pctRe.exec(line))){ matches.push({ val:Number(m[1]), start:m.index, end:m.index+m[0].length }); }
+    if(!matches.length) continue;
+    matches.forEach((mt, idx)=>{
+      const segStart = idx===0 ? 0 : matches[idx-1].end;
+      let frag = line.slice(segStart, mt.start);
+      frag = frag.replace(/^[\s\-–—→>|,.]+/,'').replace(/[~≈\s]+$/,'').trim();
+      frag = frag.replace(/\bvs\.?\b\s*$/i,'').trim();
+      if(!frag) return;
+      const matchedTeam = fuzzyTeamMatch(frag, knownTeams);
+      if(matchedTeam) assignments[matchedTeam] = mt.val;
+    });
+  }
+  return assignments;
+}
 function computeActiveWeek(){
   const weeksWithMatchups = [...new Set((activePool.matchups||[]).map(m=>m.week))].sort((a,b)=>a-b);
   if(!weeksWithMatchups.length) return activePool.pool.current_week;
@@ -1414,30 +1462,29 @@ function bindPoolEvents(){
   const bulkOddsBtn = el('bulk-odds-btn');
   if(bulkOddsBtn) bulkOddsBtn.onclick = async ()=>{
     const raw = el('bulk-odds').value;
-    const lines = raw.split('\n').map(l=>l.trim());
-    const weekHeaderRe = /^week\s+(\d+)\s*$/i;
+    const lines = raw.split('\n');
+    const weekHeaderRe = /week\s*#?\s*(\d+)/i;
     let curWeek = null;
-    const byWeek = {};
+    const blocksByWeek = {};
     for(const line of lines){
-      if(!line) continue;
       const hm = line.match(weekHeaderRe);
-      if(hm){ curWeek = Number(hm[1]); byWeek[curWeek] = byWeek[curWeek] || {}; continue; }
+      if(hm){ curWeek = Number(hm[1]); blocksByWeek[curWeek] = blocksByWeek[curWeek] || []; continue; }
       if(curWeek===null) continue;
-      const m = line.match(/^(.+?)\s+(\d{1,3})$/);
-      if(!m) continue;
-      byWeek[curWeek][m[1].trim()] = Number(m[2]);
+      blocksByWeek[curWeek].push(line);
     }
     loading = true; errorMsg=''; render();
     try{
       const updates = [];
       let matched = 0, unmatched = [];
-      Object.keys(byWeek).forEach(week=>{
-        const teamPcts = byWeek[week];
+      Object.keys(blocksByWeek).forEach(week=>{
         const weekNum = Number(week);
-        weekMatchups(weekNum).forEach(m=>{
+        const matchupsForWeek = weekMatchups(weekNum);
+        const knownTeams = [...new Set(matchupsForWeek.flatMap(m=>[m.team_a, m.team_b]))];
+        const assignments = extractPctAssignments(blocksByWeek[week].join('\n'), knownTeams);
+        matchupsForWeek.forEach(m=>{
           let pct = null;
-          if(teamPcts[m.team_a]!==undefined) pct = teamPcts[m.team_a];
-          else if(teamPcts[m.team_b]!==undefined) pct = 100 - teamPcts[m.team_b];
+          if(assignments[m.team_a]!==undefined) pct = assignments[m.team_a];
+          else if(assignments[m.team_b]!==undefined) pct = 100 - assignments[m.team_b];
           if(pct==null){ unmatched.push(`Week ${week}: ${m.team_a} vs ${m.team_b}`); return; }
           matched++;
           updates.push(sb.from('matchups').update({ home_win_pct: Math.min(99,Math.max(1,pct)) }).eq('id', m.id));
